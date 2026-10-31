@@ -1,6 +1,6 @@
 // Uygulama kabuğu: gezinme, tema, açılışta güncelleme denetimi.
 const App = {
-  version: '1.1.0', short: '1.1', repo: 'departures-mil/comm-calc', current: null,
+  version: '1.2.0', short: '1.2', repo: 'departures-mil/comm-calc', current: null,
   NAV: [['budget', 'Link Bütçesi', '⟿'], ['tools', 'Araçlar', '⚙'], ['tables', 'Tablolar', '▦'], ['antennas', 'Antenler', '⌁'], ['library', 'Kütüphane', '☰'], ['learn', 'Eğitim', '✎'], ['settings', 'Ayarlar', '⛭']],
   async start() {
     if (window.api) { const i = await window.api.info(); this.version = i.version; this.short = i.short; this.repo = i.repo; }

@@ -29,6 +29,10 @@ Views.tables = (() => {
     { id: 'margin', title: 'Link payı ve bağlantı kalitesi', head: ['Pay (dB)', 'Kalite', 'Açıklama'],
       rows: () => RF.QUALITY.map((q, i) => [q.min === -Infinity ? '< 0' : (i ? `${q.min} – ${RF.QUALITY[i - 1].min}` : `≥ ${q.min}`), q.label, q.note]),
       rowCls: r => ({ 'Mükemmel': 'ok', 'Çok iyi': 'ok', 'İyi': 'mid', 'Sınırda': 'mid', 'Kritik': 'bad', 'Çalışmaz': 'bad' })[r[1]] },
+    { id: 'antbw', title: 'Anten türleri: kazanç ve hüzme genişlikleri (H / V)', note: 'Tipik −3 dB hüzme genişlikleri; anten dikey konumda takılı varsayılır. Gerçek değer için ürün etiketine bakın.',
+      head: ['Anten', 'Grup', 'Tipik kazanç', 'Yatay (H)', 'Dikey (V)', 'Polarizasyon'],
+      rows: () => DATA.ANTENNAS.map(a => [a.name, a.group, a.gain, a.bwH || a.bw, a.bwV || '', a.pol])
+        .concat(Store.data.library.filter(x => x.type === 'antenna').map(x => [x.name + ' (kütüphane)', 'Kütüphane', x.gain != null ? x.gain + ' dBi' : '—', x.bwH ? x.bwH + '°' : '—', x.bwV ? x.bwV + '°' : '—', x.pol || '—'])) },
     { id: 'gainbw', title: 'Kazanç ↔ hüzme genişliği (simetrik, yaklaşık)', head: ['Kazanç (dBi)', 'Hüzme (°)', 'Tipik anten'],
       rows: () => [[3, 'dipol/omni'], [6, 'geniş patch'], [8, 'patch'], [10, 'biquad / küçük helis'], [12, 'helis'], [14, 'panel'], [17, 'plate / Yagi'], [20, 'büyük panel'], [24, 'çanak'], [30, 'büyük çanak']].map(([g, t]) => [g, fmt(RF.beamFromGain(g), 0), t]) }
   ];
