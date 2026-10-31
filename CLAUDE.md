@@ -9,7 +9,8 @@
 - Yayın onay beklemeden yapılır: `npm ci` sonra `node tools/release.mjs --notes "…"`. Bu, imzalı uygulama içi güncelleme paketini (`release/guncelleme.zip` + `.json`) üretir ve main dalına gönderir; `.github/workflows/release.yml` (yalnızca GitHub MCP `create_or_update_file` ile değiştirilebilir, git ile workflow gönderimi engelli) yalnızca bu paketle GitHub sürümünü yayınlar. Milen exe/RAR istemiyor (2026-10-31): yalnızca uygulama içi güncelleme; exe/RAR'ı sadece isterse üret (eski workflow v1.2 commit'inde).
 - Programdaki "Güncelle" düğmesi en son sürümdeki `guncelleme.zip`'i indirir, imzayı doğrular, `%APPDATA%\Comm Calc\guncelleme\` altına kurar. `main.js` veya yerel modül değişirse `ccShell` artırılır ve `--min-shell` verilir (kullanıcı yeni exe'yi indirir; bundan kaçının, çünkü artık exe yayınlanmıyor).
 - İmza anahtarı depoda değildir: `/mnt/project-files/comm-calc-guncelleme-imza/guncelleme-ozel.pem`.
-- APK yalnızca Milen isteyince yapılır.
+- APK yalnızca Milen isteyince yapılır (ilk APK v1.4). Derleme: `android/build.sh` (Gradle'sız; gerekenler: `apt-get install android-sdk android-sdk-platform-23 zipalign apksigner dalvik-exchange`), anahtar `/mnt/project-files/comm-calc-android-imza/` (keystore + sifre.txt, alias commcalc). Sürüme eklemek için `release.mjs --apk`. Android kabuğu `android/java/.../MainActivity.java` + `src/js/android.js` (window.api'yi sağlar); kurulu APK sonraki sürümleri guncelleme.zip ile kendi içinden günceller (kabuk SHELL=1).
+- Ayarlar → "Yöneticiye mesaj gönder": mesajlar Firestore `mesajlar` koleksiyonuna yazılır (kurallar yalnızca oluşturmaya izin verir, okuma yok). Okumak için Firebase konsolu → Firestore → mesajlar.
 
 ## Test
 - Tarayıcı: depo kökünü yerel sunucuyla sunup `src/index.html` açılır (Playwright).

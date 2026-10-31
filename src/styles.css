@@ -266,7 +266,11 @@ input[type=range] { width: 100%; accent-color: var(--acc); padding: 0; border: 0
 @media (max-width: 760px) {
   body { flex-direction: column; overflow: auto; }
   .side { width: 100%; flex-direction: row; align-items: center; padding: 6px; overflow-x: auto; }
-  .brand { padding: 0 8px; } #nav { flex-direction: row; } .nav-i span:not(.ni) { display: none; } .side-f { display: none; }
+  .side { position: sticky; top: 0; z-index: 50; gap: 2px; overflow: hidden; }
+  .brand { padding: 0 4px; } .brand > div, #langs { display: none; } .logo { width: 30px; height: 30px; }
+  #nav { flex-direction: row; flex: 1; justify-content: space-around; } .nav-i { padding: 8px 6px; justify-content: center; } .nav-i .ni { font-size: 18px; }
+  .nav-i span:not(.ni) { display: none; } .side-f { display: none; }
+  .top { padding: 10px 14px; } .top h1 { font-size: 17px; }
   .view { padding: 12px; } .ant-layout, .recog-grid, .plots, .pc, .form { grid-template-columns: 1fr; }
   .frow { grid-template-columns: 1fr; } .hero { grid-template-columns: 1fr; }
   .item { grid-template-columns: 38px 26px 1fr 70px; } .item .ival, .item [data-k=cfg] { grid-column: 3; } .iacts { grid-column: 1 / -1; justify-content: flex-end; }

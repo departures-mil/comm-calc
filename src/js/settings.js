@@ -1,3 +1,5 @@
+// Platform: desktop (Electron), android (APK) veya web (tarayıcı)
+const PLAT = window.api ? window.api.platform || 'desktop' : 'web';
 // Ayarlar: güncelleme, çevrimiçi tanıma yapılandırması, görünüm, yedekleme.
 const Updater = (() => {
   let last = null;
@@ -51,12 +53,22 @@ Views.settings = (() => {
       <div class="row-btns">${[['dark', 'Koyu'], ['light', 'Açık']].map(([k, l]) => `<button class="btn${s.theme === k ? ' primary' : ''}" data-theme="${k}">${l}</button>`).join('')}</div>
     </section>
     <section class="card"><h3>Veri ve yedek</h3>
-      <p class="muted small">${window.api ? t('Projeler, kütüphane ve ayarlar bilgisayarda {f} dosyasında saklanır; güncellemeler bu verilere dokunmaz.', { f: '<code>%APPDATA%\\Comm Calc\\veri.json</code>' }) : t('Projeler, kütüphane ve ayarlar tarayıcıda saklanır; güncellemeler bu verilere dokunmaz.')}</p>
-      <div class="row-btns"><button class="btn" id="s-bak">Tüm verileri yedekle</button><button class="btn" id="s-res">Yedekten geri yükle</button>${window.api ? '<button class="btn" id="s-dir">Veri klasörünü aç</button>' : ''}</div>
+      <p class="muted small">${PLAT === 'android' ? t('Projeler, kütüphane ve ayarlar telefonda, uygulamanın kendi klasöründe saklanır; güncellemeler bu verilere dokunmaz.') : window.api ? t('Projeler, kütüphane ve ayarlar bilgisayarda {f} dosyasında saklanır; güncellemeler bu verilere dokunmaz.', { f: '<code>%APPDATA%\\Comm Calc\\veri.json</code>' }) : t('Projeler, kütüphane ve ayarlar tarayıcıda saklanır; güncellemeler bu verilere dokunmaz.')}</p>
+      <div class="row-btns"><button class="btn" id="s-bak">Tüm verileri yedekle</button><button class="btn" id="s-res">Yedekten geri yükle</button>${PLAT === 'desktop' ? '<button class="btn" id="s-dir">Veri klasörünü aç</button>' : ''}</div>
+    </section>
+    <section class="card" id="contact"><h3>Yöneticiye mesaj gönder</h3>
+      <p class="muted small">Öneri, hata bildirimi veya sorunuzu yazın; mesaj doğrudan program yöneticisine iletilir. Size dönüş yapılmasını istiyorsanız e-posta veya telefon bırakın.</p>
+      <div class="form">
+        <label><span>Adınız (isteğe bağlı)</span><input id="c-name" maxlength="100" value="${esc(s.contactName || '')}"></label>
+        <label><span>E-posta / telefon (isteğe bağlı)</span><input id="c-reply" maxlength="200" value="${esc(s.contactReply || '')}"></label>
+        <label><span>Konu</span><select id="c-subj">${['Öneri', 'Hata bildirimi', 'Soru', 'Diğer'].map(k => `<option value="${k}">${k}</option>`).join('')}</select></label>
+        <label class="full"><span>Mesajınız</span><textarea id="c-msg" rows="5" maxlength="4000"></textarea></label>
+      </div>
+      <div class="row-btns"><button class="btn primary" id="c-send">Gönder</button><span id="c-st" class="muted small"></span></div>
     </section>
     <section class="card"><h3>Hakkında</h3>
       <p><b>Comm Calc v${App.short}</b> — İHA alıcı/verici link bütçesi, anten ve RF araçları.</p>
-      <p class="muted small">Kaynak ve sürümler: <a href="#" data-url="https://github.com/${App.repo}/releases">github.com/${App.repo}</a> · Kısayollar: F11 tam ekran, F12 geliştirici araçları.</p>
+      <p class="muted small">Kaynak ve sürümler: <a href="#" data-url="https://github.com/${App.repo}/releases">github.com/${App.repo}</a> ${PLAT === 'desktop' ? ' · Kısayollar: F11 tam ekran, F12 geliştirici araçları.' : ''}</p>
     </section>`;
     const save = () => Store.save();
     $('#s-auto', el).onchange = e => { s.autoUpdate = e.target.checked; save(); };
@@ -78,8 +90,30 @@ Views.settings = (() => {
       try { const o = JSON.parse(t); if (!o.commcalcBackup || !o.projects) throw 0; if (!await confirmBox('Mevcut tüm veriler yedektekiyle değiştirilsin mi?', 'Geri yükle')) return; delete o.commcalcBackup; Store.data = o; await Store.flush(); location.reload(); }
       catch { toast('Geçersiz yedek dosyası', 'err'); }
     };
+    $('#c-send', el).onclick = () => sendContact(el);
     if ($('#s-dir', el)) $('#s-dir', el).onclick = () => window.api.openDataDir();
     if (Updater.last) showUpdate(el, false);
+  }
+  // Mesaj Firebase (Firestore) üzerinden yalnızca yöneticiye gider: kurallar yalnızca yeni mesaj yazmaya izin verir, kimse okuyamaz
+  async function sendContact(el) {
+    const s = Store.data.settings, st = $('#c-st', el), btn = $('#c-send', el);
+    const msg = $('#c-msg', el).value.trim();
+    if (!msg) { st.textContent = t('Lütfen mesajınızı yazın.'); st.className = 'warn-t small'; $('#c-msg', el).focus(); return; }
+    s.contactName = $('#c-name', el).value.trim(); s.contactReply = $('#c-reply', el).value.trim(); Store.save();
+    const F = v => ({ stringValue: String(v).slice(0, 4000) });
+    const fields = { mesaj: F(msg), konu: F($('#c-subj', el).value), dil: F(I18N.lang), surum: F(App.version), platform: F(PLAT), zaman: { timestampValue: new Date().toISOString() } };
+    if (s.contactName) fields.ad = F(s.contactName.slice(0, 100));
+    if (s.contactReply) fields.iletisim = F(s.contactReply.slice(0, 200));
+    btn.disabled = true; st.textContent = t('Gönderiliyor…'); st.className = 'muted small';
+    try {
+      const c = AI.BUILTIN;
+      const r = await fetch(`https://firestore.googleapis.com/v1/projects/${c.projectId}/databases/(default)/documents/mesajlar?key=${c.apiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      st.textContent = '✓ ' + t('Mesajınız yöneticiye gönderildi. Teşekkürler!'); st.className = 'ok-t small';
+      $('#c-msg', el).value = '';
+    } catch (e) { st.textContent = t('Gönderilemedi; internet bağlantısını kontrol edip tekrar deneyin.'); st.className = 'warn-t small'; }
+    finally { btn.disabled = false; }
   }
   async function showUpdate(el, force) {
     const out = $('#upd-out', el);

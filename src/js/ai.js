@@ -111,5 +111,5 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     for (const k of Object.keys(out)) if (out[k] === null || out[k] === '') delete out[k];
     return out;
   }
-  return { parseText, recognize, available, firebaseConfig, ANT_TYPES };
+  return { parseText, recognize, available, firebaseConfig, ANT_TYPES, BUILTIN };
 })();
