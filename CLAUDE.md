@@ -5,7 +5,7 @@
 ## Kurallar (Milen)
 - Milen "BAŞLA" demeden yeni iş başlatma. Arayüz ve yazışma dili Türkçe.
 - Her güncellemede sürüm yükselir: `package.json` version `1.0.0 → 1.1.0 → 1.2.0` (etiket `v1.1`, `v1.2`). `src/index.html` başlığı ve `App.version` varsayılanı da güncellenir.
-- Yayın onay beklemeden yapılır: `npm ci` sonra `node tools/release.mjs --notes "…"`. Bu, imzalı uygulama içi güncelleme paketini (`release/guncelleme.zip` + `.json`) üretir, etiketler ve gönderir; `.github/workflows/release.yml` Windows'ta taşınabilir exe + RAR üretip GitHub sürümünü yayınlar.
+- Yayın onay beklemeden yapılır: `npm ci` sonra `node tools/release.mjs --notes "…"`. Bu, imzalı uygulama içi güncelleme paketini (`release/guncelleme.zip` + `.json`) üretir ve main dalına gönderir; `.github/workflows/release.yml` (yalnızca GitHub MCP `create_or_update_file` ile değiştirilebilir, git ile workflow gönderimi engelli) Windows'ta taşınabilir exe + RAR üretip GitHub sürümünü yayınlar.
 - Programdaki "Güncelle" düğmesi en son sürümdeki `guncelleme.zip`'i indirir, imzayı doğrular, `%APPDATA%\Comm Calc\guncelleme\` altına kurar. `main.js` veya yerel modül değişirse `ccShell` artırılır ve `--min-shell` verilir (kullanıcı yeni exe'yi indirir).
 - İmza anahtarı depoda değildir: `/mnt/project-files/comm-calc-guncelleme-imza/guncelleme-ozel.pem`.
 - APK yalnızca Milen isteyince yapılır.

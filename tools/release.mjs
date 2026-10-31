@@ -1,5 +1,5 @@
-// Yeni sürüm yayınlar: imzalı uygulama içi güncelleme paketini hazırlar, sürüm notunu yazar, etiketleyip GitHub'a gönderir.
-// GitHub Actions (release.yml) etiketi görünce Windows'ta taşınabilir exe ve RAR üretir, hepsini sürüme ekler.
+// Yeni sürüm yayınlar: imzalı uygulama içi güncelleme paketini hazırlar, sürüm notunu yazar ve GitHub'a gönderir.
+// GitHub Actions (release.yml) guncelleme.json değişince Windows'ta taşınabilir exe ve RAR üretir, hepsini sürüme ekler.
 // Kullanım: node tools/release.mjs --notes "Yenilikler (Türkçe, satır satır)" [--min-shell 1] [--no-push]
 import { execFileSync } from 'child_process';
 import crypto from 'crypto';
@@ -15,7 +15,7 @@ const [ma, mi, pa] = pkg.version.split('.');
 const short = ma + '.' + mi + (pa && pa !== '0' ? '.' + pa : '');
 const tag = 'v' + short;
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).trim();
-if (git('tag', '-l', tag)) { console.error(`${tag} zaten var; package.json sürümünü yükseltin.`); process.exit(1); }
+try { const old = JSON.parse(fs.readFileSync(path.join(ROOT, 'release/guncelleme.json'), 'utf8')); if (old.version === pkg.version && !arg('force')) { console.error(`${tag} zaten yayınlandı; package.json sürümünü yükseltin.`); process.exit(1); } } catch {}
 
 execFileSync(process.execPath, [path.join(ROOT, 'web/build.mjs')], { stdio: 'inherit' });
 const zip = new JSZip();
@@ -36,5 +36,4 @@ fs.writeFileSync(path.join(ROOT, 'release/NOTLAR.md'), `## Comm Calc ${tag}\n\n$
 console.log(`${tag}: paket ${(data.length / 1024).toFixed(0)} KB, sha256 ${sha256.slice(0, 12)}…`);
 git('add', '-A');
 try { git('commit', '-m', `Comm Calc ${tag}\n\n${notes}` + (process.env.CC_TRAILER ? '\n\n' + process.env.CC_TRAILER : '')); } catch {}
-git('tag', tag);
-if (!arg('no-push')) { execFileSync('git', ['push', '-u', 'origin', 'main', '--tags'], { cwd: ROOT, stdio: 'inherit' }); console.log(`${tag} gönderildi; GitHub Actions exe + RAR üretip sürümü yayınlayacak.`); }
+if (!arg('no-push')) { execFileSync('git', ['push', '-u', 'origin', 'main'], { cwd: ROOT, stdio: 'inherit' }); console.log(`${tag} gönderildi; GitHub Actions exe + RAR üretip sürümü yayınlayacak.`); }
