@@ -277,7 +277,7 @@ input[type=range] { width: 100%; accent-color: var(--acc); padding: 0; border: 0
 }
 
 /* Dil seçici ve sağdan sola (Arapça) düzen */
-.langs { display: flex; gap: 4px; padding: 8px 4px 0; flex-wrap: wrap; }
+.langs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px 4px 0; }
 .lang { flex: 1; background: none; border: 1px solid var(--line2); color: var(--mut); border-radius: 6px; padding: 4px 6px; font: inherit; font-size: 12px; cursor: pointer; }
 .lang:hover { color: var(--tx); } .lang.on { background: var(--acc); border-color: var(--acc); color: #fff; }
 svg, .formula, .sw, input[type=number], input[type=range] { direction: ltr; }

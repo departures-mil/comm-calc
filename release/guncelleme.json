@@ -1,6 +1,6 @@
 {
- "version": "1.4.0",
- "sha256": "b2e1976369a209eb648fe60d1e9837f23031e3a6bf03a2618a355994e85b05a2",
- "sig": "MEQCIGBAyWFp7dQ58vvBoWklYL4kr+e7s1TYKgyNma5OKd5MAiBlmlnut99UfmxeFTqrFlQebSmOuJyZV1k/5tQXdJMBfw==",
+ "version": "1.5.0",
+ "sha256": "67872d9f705c78b26fe4c057cd0947a160796bbb53b011a29d004809d54fb1fb",
+ "sig": "MEUCIDCiawakDZIdNRIOECZlYz8OdJllo6K0CYtQb/xK1KyfAiEAqaRYDZq01630NdSXVzZusvMZKHBb5mv6LDMPLM2tbsU=",
  "minShell": 1
 }

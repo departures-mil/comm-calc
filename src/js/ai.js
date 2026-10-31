@@ -102,7 +102,7 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
   }
   // images: dataURL dizisi; text: teknik metin; query: ürün adı
   async function recognize({ images, text, query }) {
-    const lname = { tr: 'Türkçe', en: 'İngilizce (English)', ar: 'Arapça (العربية)' }[I18N.lang] || 'Türkçe';
+    const lname = { tr: 'Türkçe', en: 'İngilizce (English)', ar: 'Arapça (العربية)', sq: 'Arnavutça (Shqip)' }[I18N.lang] || 'Türkçe';
     const parts = [{ text: PROMPT.replace('bilgilerin Türkçe kısa', 'bilgilerin ' + lname + ' kısa') }];
     for (const d of images || []) { const m = d.match(/^data:([^;]+);base64,(.*)$/); if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } }); }
     if (text) parts.push({ text: 'Teknik metin:\n' + text });

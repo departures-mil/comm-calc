@@ -32,7 +32,7 @@ Views.settings = (() => {
   function render(el) {
     const s = Store.data.settings;
     el.innerHTML = `
-    <section class="card"><h3>Dil / Language / اللغة</h3>
+    <section class="card"><h3 data-notr>Dil / Language / اللغة / Gjuha</h3>
       <div class="row-btns">${Object.entries(I18N.LANGS).map(([k, l]) => `<button class="btn${k === I18N.lang ? ' primary' : ''}" data-lang="${k}">${l.name}</button>`).join('')}</div>
     </section>
     <section class="card" id="upd-card"><h3>Güncelleme</h3>
