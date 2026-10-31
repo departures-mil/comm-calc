@@ -37,10 +37,10 @@ Views.settings = (() => {
       <div id="upd-out"></div>
     </section>
     <section class="card"><h3>Çevrimiçi ürün tanıma</h3>
-      <p class="muted small">Ürün görseli veya teknik metinden bilgileri otomatik çıkarmak için Google Gemini kullanılır. İki yoldan biri yeterli:</p>
-      <label class="full"><span><b>1) Firebase yapılandırması</b> — Firebase konsolu → Proje ayarları → Web uygulaması → <code>firebaseConfig</code> bloğunu olduğu gibi yapıştırın (AI Logic → Gemini Developer API etkin olmalı)</span>
+      <p class="muted small">Ürün görseli veya teknik metinden bilgileri otomatik çıkarmak için Google Gemini kullanılır. Program kendi Firebase projesiyle (Comm Calc) hazır gelir; aşağıdakileri yalnızca başka bir proje veya kendi anahtarınızı kullanmak isterseniz doldurun.</p>
+      <label class="full"><span><b>Başka Firebase projesi (isteğe bağlı)</b> — Firebase konsolu → Proje ayarları → Web uygulaması → <code>firebaseConfig</code> bloğunu olduğu gibi yapıştırın (AI Logic → Gemini Developer API etkin olmalı)</span>
         <textarea id="s-fb" rows="6" placeholder="const firebaseConfig = { apiKey: '...', authDomain: '...', projectId: '...', appId: '...' };">${esc(s.firebase)}</textarea></label>
-      <label class="full"><span><b>2) veya Gemini API anahtarı</b> — <a href="#" data-url="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></span><input id="s-key" type="password" value="${esc(s.geminiKey)}" placeholder="AIza…"></label>
+      <label class="full"><span><b>veya kendi Gemini API anahtarınız (isteğe bağlı)</b> — <a href="#" data-url="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></span><input id="s-key" type="password" value="${esc(s.geminiKey)}" placeholder="AIza…"></label>
       <label><span>Model</span><input id="s-model" value="${esc(s.aiModel)}"></label>
       <div class="row-btns"><button class="btn" id="s-test">Bağlantıyı test et</button><span id="s-test-out" class="muted small"></span></div>
     </section>

@@ -18,7 +18,7 @@ Views.library = (() => {
             <div class="row-btns">
               <button class="btn" id="b-parse">Metinden çıkar (çevrimdışı)</button>
               <button class="btn primary" id="b-ai">Yapay zekâ ile tanı (çevrimiçi)</button>
-              <span class="muted small" id="ai-st">${AI.available() ? 'Çevrimiçi tanıma hazır' : 'Çevrimiçi tanıma için Ayarlar\'dan Firebase/Gemini bilgisi girin'}</span>
+              <span class="muted small" id="ai-st">İnternet bağlantısı gerekir</span>
             </div>
           </div>
         </div>
