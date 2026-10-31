@@ -1,0 +1,38 @@
+# Sürüm etiketi (v1.0, v1.1 …) gönderilince Windows'ta taşınabilir exe ve RAR üretir, GitHub sürümünü yayınlar.
+name: Sürüm yayınla
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Taşınabilir exe
+        shell: bash
+        run: |
+          export CC_VER="${GITHUB_REF_NAME#v}"
+          node web/build.mjs
+          npx electron-builder --win portable --x64 --publish never
+      - name: RAR paketi
+        shell: pwsh
+        run: |
+          choco install winrar -y --no-progress
+          $v = "${{ github.ref_name }}"
+          New-Item -ItemType Directory -Force pkg | Out-Null
+          Copy-Item "dist/Comm-Calc-$v-Tasinabilir.exe" pkg/
+          Copy-Item release/NOTLAR.md pkg/OKU-BENI.md
+          & "C:\Program Files\WinRAR\Rar.exe" a -m5 -ep1 -r "dist/Comm-Calc-$v.rar" "pkg\*"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Sürümü yayınla
+        shell: bash
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          V="$GITHUB_REF_NAME"
+          gh release create "$V" "dist/Comm-Calc-$V-Tasinabilir.exe" "dist/Comm-Calc-$V.rar" release/guncelleme.zip release/guncelleme.json \
+            --title "Comm Calc $V" --notes-file release/NOTLAR.md
