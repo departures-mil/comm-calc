@@ -33,7 +33,8 @@ const Store = {
     d = d || {};
     d.projects = d.projects || [];
     d.library = d.library || [];
-    d.settings = Object.assign({ theme: 'dark', autoUpdate: true, aiModel: 'gemini-2.5-flash', firebase: '', geminiKey: '' }, d.settings || {});
+    d.settings = Object.assign({ theme: 'dark', autoUpdate: true, aiModel: 'gemini-3.8-flash', firebase: '', geminiKey: '' }, d.settings || {});
+    if (d.settings.aiModel === 'gemini-2.5-flash') d.settings.aiModel = 'gemini-3.8-flash';
     d.seeded = d.seeded || [];
     // Başlangıç kütüphanesi: bir kez eklenir; kullanıcı silerse geri gelmez
     for (const s of DATA.SEED) if (!d.seeded.includes(s.id)) { d.library.push(Object.assign({}, s)); d.seeded.push(s.id); }

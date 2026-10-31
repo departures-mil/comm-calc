@@ -51,10 +51,14 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     return o;
   }
 
-  // ---- Yapılandırma: kullanıcının yapıştırdığı firebaseConfig bloğunu esnek biçimde okur
+  // Programla gelen Firebase projesi (web yapılandırması herkese açık olacak şekilde tasarlanmıştır)
+  const BUILTIN = { apiKey: 'AIzaSyB12RFS6ENPpmnnPsETfjedNH-3hmNWQvA', authDomain: 'comm-calc-103111111.firebaseapp.com', projectId: 'comm-calc-103111111',
+    storageBucket: 'comm-calc-103111111.firebasestorage.app', messagingSenderId: '16916427114', appId: '1:16916427114:web:789decedfd76923200b513' };
+  const MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
+  // ---- Yapılandırma: kullanıcının yapıştırdığı firebaseConfig bloğunu esnek biçimde okur; yoksa programla gelen proje
   function firebaseConfig() {
     const raw = (Store.data.settings.firebase || '').trim();
-    if (!raw) return null;
+    if (!raw) return BUILTIN;
     try { return JSON.parse(raw); } catch {}
     const o = {};
     for (const k of ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'measurementId']) {
@@ -63,16 +67,31 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     }
     return o.apiKey && o.projectId ? o : null;
   }
-  const available = () => !!(firebaseConfig() || (Store.data.settings.geminiKey || '').trim());
+  const available = () => true;
   const extractJson = t => { const m = String(t).match(/\{[\s\S]*\}/); if (!m) throw new Error('Yanıtta JSON yok'); return JSON.parse(m[0]); };
 
-  // parts: [{text}] veya [{inlineData:{mimeType,data}}]
+  // Yoğunluk veya kullanımdan kalkmış model hatasında sıradaki modelle tekrar denenir
+  const retryable = e => /high demand|overloaded|unavailable|no longer available|not found|503|429|RESOURCE_EXHAUSTED/i.test(String(e && e.message));
   async function generate(parts) {
-    const s = Store.data.settings, model = (s.aiModel || 'gemini-2.5-flash').trim();
-    const cfg = firebaseConfig();
-    if (cfg && window.CCFirebase) return window.CCFirebase.generate(cfg, model, parts);
+    const s = Store.data.settings;
+    const list = [...new Set([(s.aiModel || '').trim(), ...MODELS].filter(Boolean))];
+    let err;
+    for (const model of list) {
+      for (let i = 0; i < 2; i++) {
+        try { return await generateWith(model, parts); }
+        catch (e) { err = e; if (!retryable(e)) throw e; if (/no longer available|not found/i.test(e.message)) break; await new Promise(r => setTimeout(r, 1500)); }
+      }
+    }
+    throw err;
+  }
+  // parts: [{text}] veya [{inlineData:{mimeType,data}}]
+  async function generateWith(model, parts) {
+    const s = Store.data.settings;
     const key = (s.geminiKey || '').trim();
-    if (!key) throw new Error('Çevrimiçi tanıma için Ayarlar\'dan Firebase yapılandırması veya Gemini API anahtarı girin.');
+    // Kullanıcı kendi Gemini anahtarını girdiyse o, yoksa Firebase AI Logic kullanılır
+    const cfg = key ? null : firebaseConfig();
+    if (cfg && window.CCFirebase) return window.CCFirebase.generate(cfg, model, parts);
+    if (!key) throw new Error('Çevrimiçi tanıma modülü yüklenemedi.');
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({ contents: [{ role: 'user', parts: parts.map(p => p.inlineData ? { inline_data: { mime_type: p.inlineData.mimeType, data: p.inlineData.data } } : p) }], generationConfig: { responseMimeType: 'application/json', temperature: 0.1 } })
