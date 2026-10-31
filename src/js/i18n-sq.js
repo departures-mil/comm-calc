@@ -729,7 +729,13 @@ I18N.fromEnglish('sq', {
   "Fast steering without moving parts": "Drejtim i shpejtë pa pjesë lëvizëse",
   "Multipath advantage": "Përparësi nga shumë rrugët",
   "plate / Yagi": "pllakë / Yagi",
-  "Complex and expensive": "E ndërlikuar dhe e shtrenjtë"
+  "Complex and expensive": "E ndërlikuar dhe e shtrenjtë",
+  "Program updated: v{v}": "Programi u përditësua: v{v}",
+  "What's new": "Çfarë ka të re",
+  "Later": "Më vonë",
+  "Update now": "Përditëso tani",
+  "New version ready: v{v}": "Version i ri gati: v{v}",
+  "Your version: v{c}": "Versioni juaj: v{c}"
 });
 (() => {
   const F = s => `<div class="formula" dir="ltr">${s}</div>`;

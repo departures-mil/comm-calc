@@ -1,7 +1,7 @@
-## Comm Calc v1.5
+## Comm Calc v1.6
 
-Arnavutça (Shqip) dil seçeneği eklendi: tüm arayüz, anten ansiklopedisi ve dersler. Dil düğmeleri 2×2 düzene alındı.
+Her güncellemede ekrana bildirim: yeni sürüm çıkınca program açılışta bir pencereyle haber verir, 'Şimdi güncelle' ile tek tıkla güncellenir. Güncellemeden sonra 'Yenilikler' penceresi gösterilir.
 
 **Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).
 
-**Android:** `Comm-Calc-v1.5.apk` dosyasını telefona indirip kurun. Kurulu uygulama sonraki sürümleri kendi içinden günceller.
+**Android:** `Comm-Calc-v1.6.apk` dosyasını telefona indirip kurun. Kurulu uygulama sonraki sürümleri kendi içinden günceller.

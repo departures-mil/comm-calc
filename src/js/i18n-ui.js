@@ -559,5 +559,11 @@ I18N.rows([
   // Eğitim: küçük hesaplayıcı
   ["dB:", "dB:", "dB:"],
   ["Güç ×2,00 · gücün 2,0 katı", "Power ×2,00 · 2,0× the power", "القدرة ×2,00 · ‏2,0 ضعف القدرة"],
-  ["Güç ×0,0010 · gücün %99,9'i kaybolur", "Power ×0,0010 · 99,9% of the power is lost", "القدرة ×0,0010 · يُفقد 99,9% من القدرة"]
+  ["Güç ×0,0010 · gücün %99,9'i kaybolur", "Power ×0,0010 · 99,9% of the power is lost", "القدرة ×0,0010 · يُفقد 99,9% من القدرة"],
+  ["Program güncellendi: v{v}", "Program updated: v{v}", "تم تحديث البرنامج: v{v}"],
+  ["Yenilikler", "What's new", "ما الجديد"],
+  ["Sonra", "Later", "لاحقًا"],
+  ["Şimdi güncelle", "Update now", "حدّث الآن"],
+  ["Yeni sürüm hazır: v{v}", "New version ready: v{v}", "إصدار جديد جاهز: v{v}"],
+  ["Kullandığınız sürüm: v{c}", "Your version: v{c}", "إصدارك الحالي: v{c}"]
 ]);

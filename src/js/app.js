@@ -1,6 +1,6 @@
 // Uygulama kabuğu: gezinme, tema, açılışta güncelleme denetimi.
 const App = {
-  version: '1.5.0', short: '1.5', repo: 'departures-mil/comm-calc', current: null,
+  version: '1.6.0', short: '1.6', repo: 'departures-mil/comm-calc', current: null,
   NAV: [['budget', 'Link Bütçesi', '⟿'], ['tools', 'Araçlar', '⚙'], ['tables', 'Tablolar', '▦'], ['antennas', 'Antenler', '⌁'], ['library', 'Kütüphane', '☰'], ['learn', 'Eğitim', '✎'], ['settings', 'Ayarlar', '⛭']],
   async start() {
     if (window.api) { const i = await window.api.info(); this.version = i.version; this.short = i.short; this.repo = i.repo; }
@@ -13,8 +13,9 @@ const App = {
     if (window.api) window.api.updateOk();
     if (Store.data.settings.autoUpdate) setTimeout(async () => {
       const r = await Updater.check();
-      if (r && r.ok && r.available) { $('#upd-banner-v').textContent = 'v' + Updater.short(r.version); $('#upd-banner').hidden = false; }
+      if (r && r.ok && r.available) { $('#upd-banner-v').textContent = 'v' + Updater.short(r.version); $('#upd-banner').hidden = false; News.available(r); }
     }, 1500);
+    News.afterUpdate();
   },
   // Dil değişince yeniden çizilen kabuk: menü, alt bilgi, dil seçici
   renderShell() {

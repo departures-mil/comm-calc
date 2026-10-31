@@ -250,7 +250,7 @@ input[type=range] { width: 100%; accent-color: var(--acc); padding: 0; border: 0
 #view > .card { max-width: 900px; }
 .ok-t { color: var(--gain); } .warn-t { color: var(--warn); }
 .upd-box { border: 1px solid var(--acc); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
-.notes { white-space: pre-wrap; font: 13px/1.45 inherit; background: var(--card2); padding: 8px 10px; border-radius: 6px; max-height: 200px; overflow: auto; }
+.notes { white-space: pre-wrap; font-family: inherit; font-size: 13px; line-height: 1.45; background: var(--card2); padding: 8px 10px; border-radius: 6px; max-height: 200px; overflow: auto; }
 
 /* Modal ve bildirim */
 .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
@@ -284,3 +284,4 @@ svg, .formula, .sw, input[type=number], input[type=range] { direction: ltr; }
 [dir=rtl] .formula { text-align: right; }
 [dir=rtl] body { font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif; }
 [dir=rtl] .ig select, [dir=rtl] .ig .unit { border-radius: 7px 0 0 7px; } [dir=rtl] .ig input { border-radius: 0 7px 7px 0; }
+.news h4 { margin: 10px 0 4px; } .news ul { margin: 0; padding-inline-start: 20px; } .news li { margin: 3px 0; }
