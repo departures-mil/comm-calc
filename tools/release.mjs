@@ -1,5 +1,5 @@
 // Yeni sürüm yayınlar: imzalı uygulama içi güncelleme paketini hazırlar, sürüm notunu yazar ve GitHub'a gönderir.
-// GitHub Actions (release.yml) guncelleme.json değişince Windows'ta taşınabilir exe ve RAR üretir, hepsini sürüme ekler.
+// GitHub Actions (release.yml) guncelleme.json değişince bu paketle GitHub sürümünü yayınlar (exe/RAR üretilmez).
 // Kullanım: node tools/release.mjs --notes "Yenilikler (Türkçe, satır satır)" [--min-shell 1] [--no-push]
 import { execFileSync } from 'child_process';
 import crypto from 'crypto';
@@ -33,8 +33,8 @@ fs.mkdirSync(path.join(ROOT, 'release'), { recursive: true });
 fs.writeFileSync(path.join(ROOT, 'release/guncelleme.zip'), data);
 fs.writeFileSync(path.join(ROOT, 'release/guncelleme.json'), JSON.stringify({ version: pkg.version, sha256, sig, minShell: +arg('min-shell', pkg.ccShell || 1) }, null, 1));
 const notes = String(arg('notes', '') === true ? '' : arg('notes', ''));
-fs.writeFileSync(path.join(ROOT, 'release/NOTLAR.md'), `## Comm Calc ${tag}\n\n${notes}\n\n**Kurulum:** \`Comm-Calc-${tag}-Tasinabilir.exe\` dosyasını indirip çalıştırın (kurulum gerekmez) veya \`Comm-Calc-${tag}.rar\` arşivini açın.\nYüklü programda: Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).\n`);
+fs.writeFileSync(path.join(ROOT, 'release/NOTLAR.md'), `## Comm Calc ${tag}\n\n${notes}\n\n**Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).\n`);
 console.log(`${tag}: paket ${(data.length / 1024).toFixed(0)} KB, sha256 ${sha256.slice(0, 12)}…`);
 git('add', '-A');
 try { git('commit', '-m', `Comm Calc ${tag}\n\n${notes}` + (process.env.CC_TRAILER ? '\n\n' + process.env.CC_TRAILER : '')); } catch {}
-if (!arg('no-push')) { execFileSync('git', ['push', '-u', 'origin', 'main'], { cwd: ROOT, stdio: 'inherit' }); console.log(`${tag} gönderildi; GitHub Actions exe + RAR üretip sürümü yayınlayacak.`); }
+if (!arg('no-push')) { execFileSync('git', ['push', '-u', 'origin', 'main'], { cwd: ROOT, stdio: 'inherit' }); console.log(`${tag} gönderildi; GitHub Actions sürümü yayınlayacak.`); }

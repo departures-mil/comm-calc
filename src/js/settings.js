@@ -18,7 +18,7 @@ const Updater = (() => {
   const verCode = v => { const p = String(v || '0').split('.').map(n => parseInt(n, 10) || 0); return p[0] * 10000 + (p[1] || 0) * 100 + (p[2] || 0); };
   async function install() {
     const r = await window.api.installUpdate();
-    if (r.ok) { toast(`v${short(r.version)} kuruldu, yeniden başlatılıyor…`); await Store.flush(); setTimeout(() => window.api.restart(), 900); }
+    if (r.ok) { toast(t('v{v} kuruldu, yeniden başlatılıyor…', { v: short(r.version) })); await Store.flush(); setTimeout(() => window.api.restart(), 900); }
     else if (r.error === 'full') toast('Bu sürüm yeni program dosyası gerektiriyor; indirme sayfası açılıyor', 'err');
     return r;
   }
@@ -30,6 +30,9 @@ Views.settings = (() => {
   function render(el) {
     const s = Store.data.settings;
     el.innerHTML = `
+    <section class="card"><h3>Dil / Language / اللغة</h3>
+      <div class="row-btns">${Object.entries(I18N.LANGS).map(([k, l]) => `<button class="btn${k === I18N.lang ? ' primary' : ''}" data-lang="${k}">${l.name}</button>`).join('')}</div>
+    </section>
     <section class="card" id="upd-card"><h3>Güncelleme</h3>
       <p>Yüklü sürüm: <b>Comm Calc v${App.short}</b></p>
       <label class="chk"><input type="checkbox" id="s-auto"${s.autoUpdate ? ' checked' : ''}> Program açılırken güncellemeleri denetle</label>
@@ -48,7 +51,7 @@ Views.settings = (() => {
       <div class="row-btns">${[['dark', 'Koyu'], ['light', 'Açık']].map(([k, l]) => `<button class="btn${s.theme === k ? ' primary' : ''}" data-theme="${k}">${l}</button>`).join('')}</div>
     </section>
     <section class="card"><h3>Veri ve yedek</h3>
-      <p class="muted small">Projeler, kütüphane ve ayarlar ${window.api ? 'bilgisayarda <code>%APPDATA%\\Comm Calc\\veri.json</code> dosyasında' : 'tarayıcıda'} saklanır; güncellemeler bu verilere dokunmaz.</p>
+      <p class="muted small">${window.api ? t('Projeler, kütüphane ve ayarlar bilgisayarda {f} dosyasında saklanır; güncellemeler bu verilere dokunmaz.', { f: '<code>%APPDATA%\\Comm Calc\\veri.json</code>' }) : t('Projeler, kütüphane ve ayarlar tarayıcıda saklanır; güncellemeler bu verilere dokunmaz.')}</p>
       <div class="row-btns"><button class="btn" id="s-bak">Tüm verileri yedekle</button><button class="btn" id="s-res">Yedekten geri yükle</button>${window.api ? '<button class="btn" id="s-dir">Veri klasörünü aç</button>' : ''}</div>
     </section>
     <section class="card"><h3>Hakkında</h3>
@@ -60,12 +63,13 @@ Views.settings = (() => {
     $('#s-fb', el).oninput = e => { s.firebase = e.target.value; save(); };
     $('#s-key', el).oninput = e => { s.geminiKey = e.target.value.trim(); save(); };
     $('#s-model', el).oninput = e => { s.aiModel = e.target.value.trim(); save(); };
+    $$('[data-lang]', el).forEach(b => b.onclick = () => App.setLang(b.dataset.lang));
     $$('[data-url]', el).forEach(a => a.onclick = e => { e.preventDefault(); openUrl(a.dataset.url); });
     $$('[data-theme]', el).forEach(b => b.onclick = () => { s.theme = b.dataset.theme; App.applyTheme(); save(); render(el); });
     $('#s-check', el).onclick = () => showUpdate(el, true);
     $('#s-test', el).onclick = async () => {
       const o = $('#s-test-out', el); o.textContent = 'Deneniyor…';
-      try { const r = await AI.recognize({ text: 'Test: 5.8G VTX 600mW MMCX' }); o.textContent = '✓ Çalışıyor: ' + JSON.stringify(r).slice(0, 120); }
+      try { const r = await AI.recognize({ text: 'Test: 5.8G VTX 600mW MMCX' }); o.textContent = '✓ ' + t('Çalışıyor:') + ' ' + JSON.stringify(r).slice(0, 120); }
       catch (e) { o.textContent = '✕ ' + e.message; }
     };
     $('#s-bak', el).onclick = () => downloadText('comm-calc-yedek-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(Object.assign({ commcalcBackup: 1 }, Store.data), null, 1));
@@ -82,7 +86,7 @@ Views.settings = (() => {
     if (force) out.innerHTML = '<p class="muted">Denetleniyor…</p>';
     const r = force ? await Updater.check() : Updater.last;
     if (!out.isConnected) return;
-    if (!r || !r.ok) { out.innerHTML = `<p class="warn-t">Denetlenemedi: ${esc((r && r.error) || 'bilinmeyen hata')}. İnternet bağlantısını kontrol edin.</p>`; return; }
+    if (!r || !r.ok) { out.innerHTML = `<p class="warn-t">${t('Denetlenemedi: {e}. İnternet bağlantısını kontrol edin.', { e: esc((r && r.error) || t('bilinmeyen hata')) })}</p>`; return; }
     if (!r.available) { out.innerHTML = `<p class="ok-t">✓ En güncel sürümü kullanıyorsunuz (v${Updater.short(r.current)}).</p>`; return; }
     out.innerHTML = `<div class="upd-box"><p><b>Yeni sürüm: v${Updater.short(r.version)}</b></p>${r.notes ? `<pre class="notes">${esc(r.notes)}</pre>` : ''}
       <div class="row-btns">${r.web ? `<button class="btn primary" data-go="${esc(r.pageUrl)}">Sürüm sayfasını aç</button>`
@@ -90,7 +94,7 @@ Views.settings = (() => {
         : '<button class="btn primary" id="u-inst">Güncelle ve yeniden başlat</button>'}</div><p class="muted small" id="u-st"></p></div>`;
     $$('[data-go]', out).forEach(b => b.onclick = () => openUrl(b.dataset.go));
     const ib = $('#u-inst', out);
-    if (ib) ib.onclick = async () => { ib.disabled = true; $('#u-st', out).textContent = 'İndiriliyor ve doğrulanıyor…'; const x = await Updater.install(); if (!x.ok) { ib.disabled = false; $('#u-st', out).textContent = 'Hata: ' + x.error; } };
+    if (ib) ib.onclick = async () => { ib.disabled = true; $('#u-st', out).textContent = 'İndiriliyor ve doğrulanıyor…'; const x = await Updater.install(); if (!x.ok) { ib.disabled = false; $('#u-st', out).textContent = t('Hata:') + ' ' + x.error; } };
   }
   return { title: 'Ayarlar', render };
 })();

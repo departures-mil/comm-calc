@@ -68,7 +68,7 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     return o.apiKey && o.projectId ? o : null;
   }
   const available = () => true;
-  const extractJson = t => { const m = String(t).match(/\{[\s\S]*\}/); if (!m) throw new Error('Yanıtta JSON yok'); return JSON.parse(m[0]); };
+  const extractJson = t => { const m = String(t).match(/\{[\s\S]*\}/); if (!m) throw new Error(t('Yanıtta JSON yok')); return JSON.parse(m[0]); };
 
   // Yoğunluk veya kullanımdan kalkmış model hatasında sıradaki modelle tekrar denenir
   const retryable = e => /high demand|overloaded|unavailable|no longer available|not found|503|429|RESOURCE_EXHAUSTED/i.test(String(e && e.message));
@@ -91,7 +91,7 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     // Kullanıcı kendi Gemini anahtarını girdiyse o, yoksa Firebase AI Logic kullanılır
     const cfg = key ? null : firebaseConfig();
     if (cfg && window.CCFirebase) return window.CCFirebase.generate(cfg, model, parts);
-    if (!key) throw new Error('Çevrimiçi tanıma modülü yüklenemedi.');
+    if (!key) throw new Error(t('Çevrimiçi tanıma modülü yüklenemedi.'));
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({ contents: [{ role: 'user', parts: parts.map(p => p.inlineData ? { inline_data: { mime_type: p.inlineData.mimeType, data: p.inlineData.data } } : p) }], generationConfig: { responseMimeType: 'application/json', temperature: 0.1 } })
@@ -102,7 +102,8 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
   }
   // images: dataURL dizisi; text: teknik metin; query: ürün adı
   async function recognize({ images, text, query }) {
-    const parts = [{ text: PROMPT }];
+    const lname = { tr: 'Türkçe', en: 'İngilizce (English)', ar: 'Arapça (العربية)' }[I18N.lang] || 'Türkçe';
+    const parts = [{ text: PROMPT.replace('bilgilerin Türkçe kısa', 'bilgilerin ' + lname + ' kısa') }];
     for (const d of images || []) { const m = d.match(/^data:([^;]+);base64,(.*)$/); if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } }); }
     if (text) parts.push({ text: 'Teknik metin:\n' + text });
     if (query) parts.push({ text: 'Ürün adı/modeli: ' + query + '\nBu ürünü biliyorsan bilinen teknik değerlerini doldur; emin olmadığın değerleri null bırak ve notes alanında "doğrulanmalı" yaz.' });

@@ -9,7 +9,7 @@ function fmt(x, d) {
   if (x === Infinity) return '∞'; if (x === -Infinity) return '−∞';
   d = d === undefined ? 2 : d;
   if (Math.abs(x) < 0.5 * Math.pow(10, -d)) x = 0;
-  return x.toLocaleString('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  return x.toLocaleString(I18N.locale, { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 function fmtPower(dbm) {
   const mw = RF.dbmToMw(dbm);
@@ -21,7 +21,7 @@ function fmtPower(dbm) {
 }
 function fmtDist(km) {
   if (km === null || km === undefined) return '—';
-  if (km >= 1e5) return '> 100.000 km';
+  if (km >= 1e5) return '> ' + fmt(1e5, 0) + ' km';
   return km >= 1 ? fmt(km, km >= 100 ? 0 : 2) + ' km' : fmt(km * 1000, 0) + ' m';
 }
 
@@ -33,7 +33,7 @@ const Store = {
     d = d || {};
     d.projects = d.projects || [];
     d.library = d.library || [];
-    d.settings = Object.assign({ theme: 'dark', autoUpdate: true, aiModel: 'gemini-3.8-flash', firebase: '', geminiKey: '' }, d.settings || {});
+    d.settings = Object.assign({ lang: 'tr', theme: 'dark', autoUpdate: true, aiModel: 'gemini-3.8-flash', firebase: '', geminiKey: '' }, d.settings || {});
     if (d.settings.aiModel === 'gemini-2.5-flash') d.settings.aiModel = 'gemini-3.8-flash';
     d.seeded = d.seeded || [];
     // Başlangıç kütüphanesi: bir kez eklenir; kullanıcı silerse geri gelmez
@@ -49,7 +49,7 @@ const Store = {
   async flush() {
     clearTimeout(this.timer);
     try { if (window.api) await window.api.save(this.data); else localStorage.setItem('commcalc', JSON.stringify(this.data)); }
-    catch (e) { toast('Kaydedilemedi: ' + e.message, 'err'); }
+    catch (e) { toast(t('Kaydedilemedi: ') + e.message, 'err'); }
   },
   get project() { return this.data.projects.find(p => p.id === this.data.currentId); }
 };
@@ -67,13 +67,13 @@ function toast(msg, kind) {
 function modal(title, body, buttons) {
   const w = document.createElement('div');
   w.className = 'modal-wrap';
-  w.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div class="modal-h"><h3>${esc(title)}</h3><button class="icon-btn" data-x aria-label="Kapat">✕</button></div><div class="modal-b"></div><div class="modal-f"></div></div>`;
+  w.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div class="modal-h"><h3>${esc(title)}</h3><button class="icon-btn" data-x aria-label="${t('Kapat')}">✕</button></div><div class="modal-b"></div><div class="modal-f"></div></div>`;
   const b = $('.modal-b', w);
   if (typeof body === 'string') b.innerHTML = body; else b.appendChild(body);
   const close = () => w.remove();
   $('[data-x]', w).onclick = close;
   w.addEventListener('mousedown', e => { if (e.target === w) close(); });
-  for (const bt of (buttons || [{ label: 'Kapat' }])) {
+  for (const bt of (buttons || [{ label: t('Kapat') }])) {
     const el = document.createElement('button');
     el.className = 'btn ' + (bt.cls || '');
     el.textContent = bt.label;
@@ -84,7 +84,7 @@ function modal(title, body, buttons) {
   return { el: w, close };
 }
 function confirmBox(msg, okLabel) {
-  return new Promise(res => modal('Onay', `<p>${esc(msg)}</p>`, [{ label: 'Vazgeç', onClick: () => res(false) }, { label: okLabel || 'Tamam', cls: 'primary', onClick: () => res(true) }]));
+  return new Promise(res => modal(t('Onay'), `<p>${esc(msg)}</p>`, [{ label: t('Vazgeç'), onClick: () => res(false) }, { label: okLabel || t('Tamam'), cls: 'primary', onClick: () => res(true) }]));
 }
 function openUrl(u) { if (window.api) window.api.openUrl(u); else window.open(u, '_blank', 'noopener'); }
 async function downloadText(name, text, mime) {
