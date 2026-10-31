@@ -1,4 +1,5 @@
-# release/guncelleme.json değişince (tools/release.mjs) Windows'ta taşınabilir exe ve RAR üretir, GitHub sürümünü (etiketiyle) yayınlar.
+# release/guncelleme.json değişince (tools/release.mjs) yalnızca uygulama içi güncelleme paketiyle GitHub sürümünü (etiketiyle) yayınlar.
+# Milen exe/RAR istemiyor (2026-10-31); program "Güncelle" düğmesiyle guncelleme.zip'i çeker.
 name: Sürüm yayınla
 on:
   push:
@@ -8,46 +9,15 @@ on:
 permissions:
   contents: write
 jobs:
-  build:
-    runs-on: windows-latest
+  release:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - name: Sürüm
-        id: v
+      - name: Sürümü yayınla
         shell: bash
+        env: { GH_TOKEN: '${{ github.token }}' }
         run: |
           V=$(node -p "const v=require('./release/guncelleme.json').version.split('.');'v'+v[0]+'.'+v[1]+(v[2]&&v[2]!=='0'?'.'+v[2]:'')")
-          echo "tag=$V" >> "$GITHUB_OUTPUT"
-          if gh release view "$V" >/dev/null 2>&1; then echo "exists=1" >> "$GITHUB_OUTPUT"; fi
-        env: { GH_TOKEN: '${{ github.token }}' }
-      - if: steps.v.outputs.exists != '1'
-        run: npm ci
-      - name: Taşınabilir exe
-        if: steps.v.outputs.exists != '1'
-        shell: bash
-        run: |
-          V="${{ steps.v.outputs.tag }}"
-          export CC_VER="${V#v}"
-          node web/build.mjs
-          npx electron-builder --win portable --x64 --publish never
-      - name: RAR paketi
-        if: steps.v.outputs.exists != '1'
-        shell: pwsh
-        run: |
-          choco install winrar -y --no-progress
-          $v = "${{ steps.v.outputs.tag }}"
-          New-Item -ItemType Directory -Force pkg | Out-Null
-          Copy-Item "dist/Comm-Calc-$v-Tasinabilir.exe" pkg/
-          Copy-Item release/NOTLAR.md pkg/OKU-BENI.md
-          & "C:\Program Files\WinRAR\Rar.exe" a -m5 -ep1 -r "dist/Comm-Calc-$v.rar" "pkg\*"
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-      - name: Sürümü yayınla
-        if: steps.v.outputs.exists != '1'
-        shell: bash
-        env: { GH_TOKEN: '${{ github.token }}' }
-        run: |
-          V="${{ steps.v.outputs.tag }}"
-          gh release create "$V" "dist/Comm-Calc-$V-Tasinabilir.exe" "dist/Comm-Calc-$V.rar" release/guncelleme.zip release/guncelleme.json \
+          if gh release view "$V" >/dev/null 2>&1; then echo "$V zaten var"; exit 0; fi
+          gh release create "$V" release/guncelleme.zip release/guncelleme.json \
             --target "$GITHUB_SHA" --title "Comm Calc $V" --notes-file release/NOTLAR.md
