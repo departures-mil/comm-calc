@@ -1,9 +1,9 @@
-## Comm Calc v1.3
+## Comm Calc v1.4
 
-- Dil seçeneği: Türkçe, English ve العربية (Arapça). Kenar çubuğundan veya Ayarlar → Dil bölümünden değiştirilir.
-- Arapçada tüm arayüz sağdan sola düzene geçer; sayılar ve birimler doğru yönde gösterilir.
-- Anten ansiklopedisi, tablolar, araçlar ve 13 eğitim dersi üç dilde.
-- Yapay zekâ tanıma notları seçili dilde yazılır.
-- Bundan sonra sürümler yalnızca uygulama içi güncelleme olarak yayınlanır (exe/RAR yok).
+- Android uygulaması (APK): masaüstüyle aynı program telefonda; üç dil, kamera ile ürün görseli, uygulama içi güncelleme.
+- Ayarlar → Yöneticiye mesaj gönder: öneri, hata bildirimi veya soru doğrudan yöneticiye iletilir.
+- Telefon ekranı için daha sade üst menü.
 
 **Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).
+
+**Android:** `Comm-Calc-v1.4.apk` dosyasını telefona indirip kurun. Kurulu uygulama sonraki sürümleri kendi içinden günceller.

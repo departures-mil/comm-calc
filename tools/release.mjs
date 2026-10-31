@@ -33,7 +33,16 @@ fs.mkdirSync(path.join(ROOT, 'release'), { recursive: true });
 fs.writeFileSync(path.join(ROOT, 'release/guncelleme.zip'), data);
 fs.writeFileSync(path.join(ROOT, 'release/guncelleme.json'), JSON.stringify({ version: pkg.version, sha256, sig, minShell: +arg('min-shell', pkg.ccShell || 1) }, null, 1));
 const notes = String(arg('notes', '') === true ? '' : arg('notes', ''));
-fs.writeFileSync(path.join(ROOT, 'release/NOTLAR.md'), `## Comm Calc ${tag}\n\n${notes}\n\n**Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).\n`);
+// --apk: android/build.sh ile üretilen APK sürüme eklenir (önceki APK release/ klasöründen kaldırılır)
+let apkNote = '';
+if (arg('apk')) {
+  const apk = path.join(ROOT, 'android/out', `Comm-Calc-${tag}.apk`);
+  if (!fs.existsSync(apk)) { console.error(`${apk} yok; önce android/build.sh çalıştırın.`); process.exit(1); }
+  for (const n of fs.readdirSync(path.join(ROOT, 'release'))) if (n.endsWith('.apk')) fs.rmSync(path.join(ROOT, 'release', n));
+  fs.copyFileSync(apk, path.join(ROOT, 'release', path.basename(apk)));
+  apkNote = `\n**Android:** \`${path.basename(apk)}\` dosyasını telefona indirip kurun. Kurulu uygulama sonraki sürümleri kendi içinden günceller.\n`;
+} else for (const n of fs.readdirSync(path.join(ROOT, 'release'))) if (n.endsWith('.apk')) fs.rmSync(path.join(ROOT, 'release', n));
+fs.writeFileSync(path.join(ROOT, 'release/NOTLAR.md'), `## Comm Calc ${tag}\n\n${notes}\n\n**Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).\n${apkNote}`);
 console.log(`${tag}: paket ${(data.length / 1024).toFixed(0)} KB, sha256 ${sha256.slice(0, 12)}…`);
 git('add', '-A');
 try { git('commit', '-m', `Comm Calc ${tag}\n\n${notes}` + (process.env.CC_TRAILER ? '\n\n' + process.env.CC_TRAILER : '')); } catch {}
