@@ -69,7 +69,7 @@ Views.learn = (() => {
   ];
   let open = 0;
   function render(el) {
-    el.innerHTML = `<div class="learn">${LESSONS.map((l, i) => `<details class="card lesson"${i === open ? ' open' : ''} data-i="${i}"><summary>${l.t}</summary><div class="lesson-b">${l.b}</div></details>`).join('')}</div>`;
+    el.innerHTML = `<div class="learn">${I18N.content('lessons', LESSONS).map((l, i) => `<details class="card lesson"${i === open ? ' open' : ''} data-i="${i}"><summary>${l.t}</summary><div class="lesson-b">${l.b}</div></details>`).join('')}</div>`;
     $$('details', el).forEach(d => d.addEventListener('toggle', () => { if (d.open) open = +d.dataset.i; }));
     const mini = $('[data-mini="db"]', el);
     if (mini) {

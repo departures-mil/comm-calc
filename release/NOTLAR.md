@@ -1,7 +1,9 @@
-## Comm Calc v1.2
+## Comm Calc v1.3
 
-- Antenler: her anten türü için yatay (H) ve dikey (V) hüzme genişlikleri ayrı ayrı gösteriliyor
-- Tablolar: yeni 'Anten türleri: kazanç ve hüzme genişlikleri (H / V)' tablosu (kütüphanedeki antenler dahil)
+- Dil seçeneği: Türkçe, English ve العربية (Arapça). Kenar çubuğundan veya Ayarlar → Dil bölümünden değiştirilir.
+- Arapçada tüm arayüz sağdan sola düzene geçer; sayılar ve birimler doğru yönde gösterilir.
+- Anten ansiklopedisi, tablolar, araçlar ve 13 eğitim dersi üç dilde.
+- Yapay zekâ tanıma notları seçili dilde yazılır.
+- Bundan sonra sürümler yalnızca uygulama içi güncelleme olarak yayınlanır (exe/RAR yok).
 
-**Kurulum:** `Comm-Calc-v1.2-Tasinabilir.exe` dosyasını indirip çalıştırın (kurulum gerekmez) veya `Comm-Calc-v1.2.rar` arşivini açın.
-Yüklü programda: Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).
+**Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).

@@ -65,17 +65,17 @@ Views.library = (() => {
       try {
         const o = JSON.parse(t), items = o.items || o; if (!Array.isArray(items)) throw 0;
         let n = 0; for (const it of items) if (it && it.name && !Store.data.library.find(x => x.id === it.id)) { Store.data.library.push(it); n++; }
-        Store.save(); render(el); toast(n + ' kayıt eklendi');
+        Store.save(); render(el); toast(t('{n} kayıt eklendi', { n }));
       } catch { toast('Geçersiz kütüphane dosyası', 'err'); }
     };
     $$('.lib-card', el).forEach(c => {
       const x = Store.data.library.find(i => i.id === c.dataset.id);
       c.onclick = async e => {
-        const t = e.target;
-        if (t.dataset.use) return useIn(x, t.dataset.use);
-        if (t.hasAttribute('data-edit')) return edit(x);
-        if (t.hasAttribute('data-pat')) { App.go('antennas', 'lib:' + x.id); return; }
-        if (t.hasAttribute('data-del')) { if (await confirmBox(`"${x.name}" silinsin mi?`, 'Sil')) { Store.data.library = Store.data.library.filter(i => i !== x); Store.save(); render(el); } }
+        const tg = e.target;
+        if (tg.dataset.use) return useIn(x, tg.dataset.use);
+        if (tg.hasAttribute('data-edit')) return edit(x);
+        if (tg.hasAttribute('data-pat')) { App.go('antennas', 'lib:' + x.id); return; }
+        if (tg.hasAttribute('data-del')) { if (await confirmBox(t('"{n}" silinsin mi?', { n: x.name }), t('Sil'))) { Store.data.library = Store.data.library.filter(i => i !== x); Store.save(); render(el); } }
       };
     });
     // Görsel ekleme
@@ -101,11 +101,11 @@ Views.library = (() => {
       btn.disabled = true; st.textContent = 'Tanınıyor…';
       try {
         const o = await AI.recognize({ images: await Promise.all(images.map(d => shrink(d, 1600, 0.85))), text, query });
-        st.textContent = 'Tanındı' + (o.confidence ? ` (güven %${Math.round(o.confidence * 100)})` : '') + ' — kaydetmeden önce kontrol edin';
+        st.textContent = o.confidence ? t('Tanındı (güven %{p}) — kaydetmeden önce kontrol edin', { p: Math.round(o.confidence * 100) }) : t('Tanındı — kaydetmeden önce kontrol edin');
         delete o.confidence;
-        o.src = 'Yapay zekâ tanıma' + (images.length ? ' (görsel)' : '') + (query ? ' — ' + query : '');
+        o.src = t('Yapay zekâ tanıma') + (images.length ? ' (' + t('görsel') + ')' : '') + (query ? ' — ' + query : '');
         edit(o, true);
-      } catch (e) { st.textContent = 'Hata: ' + e.message; toast('Tanıma başarısız: ' + e.message, 'err'); }
+      } catch (e) { st.textContent = t('Hata:') + ' ' + e.message; toast(t('Tanıma başarısız:') + ' ' + e.message, 'err'); }
       finally { btn.disabled = false; }
     };
   }
@@ -143,12 +143,12 @@ Views.library = (() => {
     if (role === 'txAnt' || role === 'rxAnt') {
       let it = P.items.find(i => i.role === role);
       if (!it) { it = { id: DATA.newId(), side: role === 'txAnt' ? 'tx' : 'rx', role, kind: 'gain' }; P.items.push(it); }
-      Object.assign(it, { on: true, kind: 'gain', auto: undefined, value: +x.gain || 0, name: (role === 'txAnt' ? 'Verici anten: ' : 'Alıcı anten: ') + x.name, ant: { id: x.id, pol: x.pol, bwH: x.bwH, bwV: x.bwV, fMin: x.fMin, fMax: x.fMax } });
+      Object.assign(it, { on: true, kind: 'gain', auto: undefined, value: +x.gain || 0, name: t(role === 'txAnt' ? 'Verici anten:' : 'Alıcı anten:') + ' ' + x.name, ant: { id: x.id, pol: x.pol, bwH: x.bwH, bwV: x.bwV, fMin: x.fMin, fMax: x.fMax } });
       const pt = P.items.find(i => i.auto === 'point'); if (pt && x.bwH && x.bwH < 360) pt.p.hpbw = Math.min(x.bwH, x.bwV || x.bwH);
       const pol = P.items.find(i => i.auto === 'pol'); if (pol && x.pol) pol.p[role === 'txAnt' ? 'a' : 'b'] = x.pol;
     }
     P.updated = Date.now(); Store.save();
-    toast(`"${x.name}" link bütçesine eklendi (${Store.project.name})`);
+    toast(t('"{n}" link bütçesine eklendi ({p})', { n: x.name, p: t(Store.project.name) }));
   }
 
   // Kayıt düzenleme formu
