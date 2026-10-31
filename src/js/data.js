@@ -71,6 +71,18 @@ const DATA = (() => {
       uav: 'Modern dijital video linkleri (DJI O3/O4, Walksnail), 4G/5G, askerî datalink ve radar sistemleri.', pros: ['Hareketsiz hızlı yönlendirme', 'Çok yol avantajı'], cons: ['Karmaşık ve pahalı'] }
   ];
 
+  // Tipik yatay (H, azimut) ve dikey (V, elevasyon) −3 dB hüzme genişlikleri; anten dikey konumda takılı varsayılır
+  const BW = {
+    isotropic: ['360°', '360°'], dipole: ['360°', '≈78°'], monopole: ['360°', '≈45–60°'], groundplane: ['360°', '≈50–60°'],
+    collinear: ['360°', '≈8–30° (5 dBi ≈30°, 8 dBi ≈15°, 12 dBi ≈7°)'], cloverleaf: ['360° (±1 dB dalgalanma)', '≈100–120°'], skew: ['360° (±1,5 dB)', '≈90–110°'],
+    turnstile: ['360°', '≈140° (zenite bakar)'], qha: ['360°', '≈140–160° (yarım küre)'], patch: ['≈60–80°', '≈55–75°'],
+    panel: ['≈15–60° (ör. Maple 16°)', '≈10–40° (ör. Maple 40°)'], helical: ['≈30–50°', '≈30–50°'], yagi: ['≈25–55°', '≈30–65°'],
+    lpda: ['≈60–75° (E düzlemi)', '≈100–120° (H düzlemi)'], biquad: ['≈50–60°', '≈50–60°'], cantenna: ['≈45–60°', '≈45–60°'],
+    moxon: ['≈80–100°', '≈120–140°'], spiral: ['≈70–90°', '≈70–90°'], horn: ['≈10–40°', '≈10–40°'],
+    sector: ['60° / 90° / 120°', '≈6–15°'], dish: ['≈2–10° (≈70·λ/D)', '≈2–10° (≈70·λ/D)'], phased: ['≈10–30° (elektronik yönlenir)', '≈10–60°']
+  };
+  for (const a of ANTENNAS) if (BW[a.id]) { a.bwH = BW[a.id][0]; a.bwV = BW[a.id][1]; }
+
   // ---- Başlangıç kütüphanesi (Milen'in gönderdiği ürünler + yaygın jenerik ürünler)
   const SEED = [
     { id: 'seed-fs5808m', type: 'rx', name: 'FPVspeed FS5808M', brand: 'FPVspeed', fMin: 5645, fMax: 5945, sens: -90, channels: '8 CH', connector: '', notes: '5.8G geniş bant FM ses+video alıcı modül, SMD 28×23×3 mm, 5 V 170 mA, PLL, analog A/V çıkış.', src: 'Milen ürün görseli' },
