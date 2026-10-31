@@ -3,7 +3,7 @@
 // değişken kabul edilir (ör. "−3 dB hüzme: 40°" anahtarı "−3 dB hüzme: 72°" metnini de çevirir).
 // Ekrana eklenen her metin düğümü ve placeholder/title/aria-label otomatik çevrilir.
 const I18N = (() => {
-  const LANGS = { tr: { name: 'Türkçe', dir: 'ltr', locale: 'tr-TR' }, en: { name: 'English', dir: 'ltr', locale: 'en-US' }, ar: { name: 'العربية', dir: 'rtl', locale: 'en-US' } };
+  const LANGS = { tr: { name: 'Türkçe', dir: 'ltr', locale: 'tr-TR' }, en: { name: 'English', dir: 'ltr', locale: 'en-US' }, ar: { name: 'العربية', dir: 'rtl', locale: 'en-US' }, sq: { name: 'Shqip', dir: 'ltr', locale: 'sq-AL' } };
   const NUM = /[-−+]?\d+(?:[.,]\d+)*/g;
   const packs = {};
   let lang = 'tr', obs = null;
@@ -16,8 +16,16 @@ const I18N = (() => {
     const tpl = kn.length ? v.replace(NUM, m => { const i = kn.findIndex((x, j) => x === m && !used[j]); if (i < 0) return m; used[i] = 1; return '{' + i + '}'; }) : v;
     pack(code).map.set(skel(k.trim()), { tpl, n: kn.length });
   }
-  // rows: [[türkçe, english, arabic], ...]
-  function rows(list) { for (const [k, en, ar] of list) { put('en', k, en); put('ar', k, ar); } }
+  // rows: [[türkçe, english, arabic], ...]; Arnavutça çevirisi olmayan satırda İngilizcesi gösterilir
+  const byEn = new Map();
+  function rows(list) {
+    for (const [k, en, ar] of list) {
+      put('en', k, en); put('ar', k, ar); put('sq', k, en);
+      if (en) (byEn.get(en) || byEn.set(en, []).get(en)).push(k);
+    }
+  }
+  // İngilizce metne göre ek dil: { "English": "çeviri" } (i18n-sq.js)
+  function fromEnglish(code, map) { for (const [en, v] of Object.entries(map)) for (const k of byEn.get(en) || []) put(code, k, v); }
   function addContent(code, key, val) { pack(code).content[key] = val; }
   function lookup(s) {
     const p = packs[lang]; if (!p) return null;
@@ -78,6 +86,6 @@ const I18N = (() => {
     if (document.body) { watch(); walk(document.body); }
   }
   const content = (key, fallback) => (lang !== 'tr' && packs[lang] && packs[lang].content[key]) || fallback;
-  return { LANGS, rows, addContent, set, t, content, walk, get lang() { return lang; }, get locale() { return LANGS[lang].locale; } };
+  return { LANGS, rows, fromEnglish, addContent, set, t, content, walk, get lang() { return lang; }, get locale() { return LANGS[lang].locale; } };
 })();
 const t = I18N.t;
