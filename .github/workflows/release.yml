@@ -1,5 +1,6 @@
-# release/guncelleme.json değişince (tools/release.mjs) yalnızca uygulama içi güncelleme paketiyle GitHub sürümünü (etiketiyle) yayınlar.
+# release/guncelleme.json değişince (tools/release.mjs) uygulama içi güncelleme paketiyle GitHub sürümünü (etiketiyle) yayınlar.
 # Milen exe/RAR istemiyor (2026-10-31); program "Güncelle" düğmesiyle guncelleme.zip'i çeker.
+# release/ altında bir Android APK'sı varsa (android/build.sh) o da sürüme eklenir.
 name: Sürüm yayınla
 on:
   push:
@@ -19,5 +20,6 @@ jobs:
         run: |
           V=$(node -p "const v=require('./release/guncelleme.json').version.split('.');'v'+v[0]+'.'+v[1]+(v[2]&&v[2]!=='0'?'.'+v[2]:'')")
           if gh release view "$V" >/dev/null 2>&1; then echo "$V zaten var"; exit 0; fi
-          gh release create "$V" release/guncelleme.zip release/guncelleme.json \
+          APK=$(ls release/*.apk 2>/dev/null || true)
+          gh release create "$V" release/guncelleme.zip release/guncelleme.json $APK \
             --target "$GITHUB_SHA" --title "Comm Calc $V" --notes-file release/NOTLAR.md
