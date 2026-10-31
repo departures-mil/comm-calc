@@ -1,0 +1,42 @@
+{
+  "name": "comm-calc",
+  "productName": "Comm Calc",
+  "version": "1.0.0",
+  "ccShell": 1,
+  "description": "İHA alıcı/verici link bütçesi hesaplayıcı",
+  "main": "main.js",
+  "author": "Milen",
+  "license": "MIT",
+  "repository": "departures-mil/comm-calc",
+  "scripts": {
+    "start": "electron .",
+    "build:web": "node web/build.mjs",
+    "dist:win": "node web/build.mjs && electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "com.departuresmil.commcalc",
+    "productName": "Comm Calc",
+    "copyright": "Milen",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "app-main.js", "preload.js", "lib/**", "src/**", "assets/**", "package.json"],
+    "win": {
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "portable": { "artifactName": "Comm-Calc-v${env.CC_VER}-Tasinabilir.${ext}" },
+    "afterPack": "tools/after-pack.cjs"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.25.0",
+    "firebase": "^13.1.0",
+    "pe-library": "^1.0.1",
+    "resedit": "^2.0.3",
+    "sharp": "^0.34.0",
+    "png-to-ico": "^2.1.8"
+  }
+}
