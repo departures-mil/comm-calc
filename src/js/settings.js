@@ -37,9 +37,8 @@ Views.settings = (() => {
     </section>
     <section class="card" id="upd-card"><h3>Güncelleme</h3>
       <p>Yüklü sürüm: <b>Comm Calc v${App.short}</b></p>
-      <div class="upd-set"><label>Otomatik denetim <select id="s-umode">${[['off', 'Kapalı'], ['start', 'Yalnızca program açılırken'], ['interval', 'Açılışta ve belirli aralıklarla']].map(([k, l]) => `<option value="${k}"${s.updMode === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-        <label id="s-uint"${s.updMode === 'interval' ? '' : ' hidden'}>Aralık: her <input type="number" id="s-uevery" min="1" step="1" value="${s.updEvery}"> <select id="s-uunit">${[['s', 'saniye'], ['m', 'dakika'], ['h', 'saat']].map(([k, l]) => `<option value="${k}"${s.updUnit === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
-      <p class="muted small">Yeni sürüm çıkınca ekranda bildirim penceresi açılır. En kısa aralık 5 saniyedir; GitHub yeni sürümü birkaç dakika içinde duyurur.</p>
+      <label class="chk"><input type="checkbox" id="s-auto"${s.autoUpdate ? ' checked' : ''}> Program açılırken güncellemeleri denetle</label>
+      <p class="muted small">Yeni sürüm çıkınca ekranda bildirim penceresi açılır.</p>
       <div class="row-btns"><button class="btn primary" id="s-check">Güncellemeleri denetle</button></div>
       <div id="upd-out"></div>
     </section>
@@ -73,9 +72,7 @@ Views.settings = (() => {
       <p class="muted small">Kaynak ve sürümler: <a href="#" data-url="https://github.com/${App.repo}/releases">github.com/${App.repo}</a> ${PLAT === 'desktop' ? ' · Kısayollar: F11 tam ekran, F12 geliştirici araçları.' : ''}</p>
     </section>`;
     const save = () => Store.save();
-    $('#s-umode', el).onchange = e => { s.updMode = e.target.value; s.autoUpdate = s.updMode !== 'off'; $('#s-uint', el).hidden = s.updMode !== 'interval'; save(); News.schedule(); };
-    $('#s-uevery', el).onchange = e => { s.updEvery = Math.max(1, Math.round(+e.target.value) || 1); e.target.value = s.updEvery; save(); News.schedule(); };
-    $('#s-uunit', el).onchange = e => { s.updUnit = e.target.value; save(); News.schedule(); };
+    $('#s-auto', el).onchange = e => { s.autoUpdate = e.target.checked; save(); };
     $('#s-fb', el).oninput = e => { s.firebase = e.target.value; save(); };
     $('#s-key', el).oninput = e => { s.geminiKey = e.target.value.trim(); save(); };
     $('#s-model', el).oninput = e => { s.aiModel = e.target.value.trim(); save(); };

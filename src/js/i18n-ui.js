@@ -566,6 +566,7 @@ I18N.rows([
   ["Şimdi güncelle", "Update now", "حدّث الآن"],
   ["Yeni sürüm hazır: v{v}", "New version ready: v{v}", "إصدار جديد جاهز: v{v}"],
   ["Kullandığınız sürüm: v{c}", "Your version: v{c}", "إصدارك الحالي: v{c}"],
+  ["Yeni sürüm çıkınca ekranda bildirim penceresi açılır.", "When a new version is out, a notification window opens on screen.", "عند صدور إصدار جديد تُفتح نافذة إشعار على الشاشة."],
   ["Otomatik denetim", "Automatic check", "التحقق التلقائي"],
   ["Kapalı", "Off", "متوقف"],
   ["Yalnızca program açılırken", "Only when the program starts", "عند تشغيل البرنامج فقط"],

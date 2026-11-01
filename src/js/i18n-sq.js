@@ -736,6 +736,7 @@ I18N.fromEnglish('sq', {
   "Update now": "Përditëso tani",
   "New version ready: v{v}": "Version i ri gati: v{v}",
   "Your version: v{c}": "Versioni juaj: v{c}",
+  "When a new version is out, a notification window opens on screen.": "Kur del një version i ri, në ekran hapet një dritare njoftimi.",
   "Automatic check": "Kontrolli automatik",
   "Off": "Fikur",
   "Only when the program starts": "Vetëm kur niset programi",
