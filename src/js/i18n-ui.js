@@ -565,5 +565,14 @@ I18N.rows([
   ["Sonra", "Later", "لاحقًا"],
   ["Şimdi güncelle", "Update now", "حدّث الآن"],
   ["Yeni sürüm hazır: v{v}", "New version ready: v{v}", "إصدار جديد جاهز: v{v}"],
-  ["Kullandığınız sürüm: v{c}", "Your version: v{c}", "إصدارك الحالي: v{c}"]
+  ["Kullandığınız sürüm: v{c}", "Your version: v{c}", "إصدارك الحالي: v{c}"],
+  ["Otomatik denetim", "Automatic check", "التحقق التلقائي"],
+  ["Kapalı", "Off", "متوقف"],
+  ["Yalnızca program açılırken", "Only when the program starts", "عند تشغيل البرنامج فقط"],
+  ["Açılışta ve belirli aralıklarla", "At startup and at set intervals", "عند التشغيل وعلى فترات محددة"],
+  ["Aralık: her", "Interval: every", "الفاصل: كل"],
+  ["saniye", "seconds", "ثانية"],
+  ["dakika", "minutes", "دقيقة"],
+  ["saat", "hours", "ساعة"],
+  ["Yeni sürüm çıkınca ekranda bildirim penceresi açılır. En kısa aralık 5 saniyedir; GitHub yeni sürümü birkaç dakika içinde duyurur.", "When a new version is out, a notification window opens on screen. The shortest interval is 5 seconds; GitHub announces a new version within a few minutes.", "عند صدور إصدار جديد تُفتح نافذة إشعار على الشاشة. أقصر فاصل هو 5 ثوانٍ؛ يُعلن GitHub عن الإصدار الجديد خلال بضع دقائق."]
 ]);

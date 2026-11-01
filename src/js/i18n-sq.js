@@ -735,7 +735,16 @@ I18N.fromEnglish('sq', {
   "Later": "Më vonë",
   "Update now": "Përditëso tani",
   "New version ready: v{v}": "Version i ri gati: v{v}",
-  "Your version: v{c}": "Versioni juaj: v{c}"
+  "Your version: v{c}": "Versioni juaj: v{c}",
+  "Automatic check": "Kontrolli automatik",
+  "Off": "Fikur",
+  "Only when the program starts": "Vetëm kur niset programi",
+  "At startup and at set intervals": "Në nisje dhe në intervale të caktuara",
+  "Interval: every": "Intervali: çdo",
+  "seconds": "sekonda",
+  "minutes": "minuta",
+  "hours": "orë",
+  "When a new version is out, a notification window opens on screen. The shortest interval is 5 seconds; GitHub announces a new version within a few minutes.": "Kur del një version i ri, në ekran hapet një dritare njoftimi. Intervali më i shkurtër është 5 sekonda; GitHub e njofton versionin e ri brenda pak minutash."
 });
 (() => {
   const F = s => `<div class="formula" dir="ltr">${s}</div>`;

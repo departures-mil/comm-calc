@@ -1,6 +1,10 @@
 // Sürüm yenilikleri: güncellemeden sonraki ilk açılışta ekranda gösterilir.
 // Her yeni sürümde en üste bir kayıt eklenir (tr, en, ar, sq; her biri madde listesi).
 const NEWS = [
+  { v: '1.7', tr: ['Ayarlar → Güncelleme: otomatik denetim artık ayarlanabilir (kapalı, yalnızca açılışta ya da açılışta ve belirli aralıklarla; saniye, dakika veya saat).', 'Yeni sürüm çıkınca program açıkken de ekrana bildirim gelir; program arka plandaysa sistem bildirimi de gönderilir.'],
+    en: ['Settings → Update: automatic checking is now adjustable (off, only at startup, or at startup and at set intervals; seconds, minutes or hours).', 'When a new version is out, a notification appears on screen even while the program is open; if the program is in the background, a system notification is also sent.'],
+    ar: ['الإعدادات ← التحديث: أصبح التحقق التلقائي قابلًا للضبط (متوقف، عند التشغيل فقط، أو عند التشغيل وعلى فترات محددة؛ بالثواني أو الدقائق أو الساعات).', 'عند صدور إصدار جديد يظهر إشعار على الشاشة حتى أثناء عمل البرنامج؛ وإذا كان البرنامج في الخلفية يُرسل إشعار نظام أيضًا.'],
+    sq: ['Cilësimet → Përditëso: kontrolli automatik tani mund të rregullohet (fikur, vetëm në nisje, ose në nisje dhe në intervale të caktuara; sekonda, minuta ose orë).', 'Kur del një version i ri, njoftimi shfaqet në ekran edhe kur programi është i hapur; nëse programi është në sfond, dërgohet edhe njoftim sistemi.'] },
   { v: '1.6', tr: ['Her güncellemede ekrana bildirim gelir: yeni sürüm çıkınca program açılışta haber verir, tek tıkla güncellenir.', 'Güncellemeden sonra bu "Yenilikler" penceresi gösterilir.'],
     en: ['A notification appears on screen for every update: when a new version is out, the program tells you at startup and updates with one click.', 'After an update, this "What\'s new" window is shown.'],
     ar: ['يظهر إشعار على الشاشة مع كل تحديث: عند صدور إصدار جديد يُعلمك البرنامج عند التشغيل ويُحدَّث بنقرة واحدة.', 'بعد التحديث تظهر نافذة «ما الجديد» هذه.'],
@@ -46,5 +50,45 @@ const News = (() => {
     const m = modal(t('Yeni sürüm hazır: v{v}', { v }), `<p>${t('Kullandığınız sürüm: v{c}', { c: App.short })}</p>${notes ? `<pre class="notes">${esc(notes)}</pre>` : ''}<p class="muted small upd-st"></p>`, btns);
     m.el.setAttribute('data-upd', '');
   }
-  return { afterUpdate, available };
+  // Otomatik denetim: açılışta ve (seçildiyse) belirli aralıklarla.
+  // Aralıklı denetim GitHub API sınırına takılmamak için önce depodaki küçük guncelleme.json'a bakar;
+  // yeni sürüm görünürse tam denetim (notlarla) yapılır.
+  let timer = null, notified = null, lastFull = 0;
+  async function full() {
+    lastFull = Date.now();
+    const r = await Updater.check();
+    if (r && r.ok && r.available) {
+      $('#upd-banner-v').textContent = 'v' + Updater.short(r.version); $('#upd-banner').hidden = false;
+      if (r.version !== notified) { notified = r.version; available(r); osNotify(r); }
+    }
+    return r;
+  }
+  async function probe() {
+    try {
+      const res = await fetch(`https://raw.githubusercontent.com/${App.repo}/main/release/guncelleme.json?t=${Date.now()}`, { cache: 'no-store' });
+      const j = await res.json();
+      if (Updater.verCode(j.version) > Updater.verCode(App.version) && j.version !== notified && Date.now() - lastFull > 20000) await full();
+    } catch {}
+  }
+  function osNotify(r) {
+    // Program arka plandaysa işletim sistemi bildirimi de gönder (destekleniyorsa)
+    try {
+      if (!document.hidden || !('Notification' in window)) return;
+      const show = () => new Notification('Comm Calc', { body: t('Yeni sürüm hazır: v{v}', { v: Updater.short(r.version) }) }).onclick = () => window.focus();
+      if (Notification.permission === 'granted') show();
+      else if (Notification.permission !== 'denied') Notification.requestPermission().then(p => p === 'granted' && show());
+    } catch {}
+  }
+  function schedule() {
+    clearTimeout(timer);
+    const s = Store.data.settings;
+    if (s.updMode !== 'interval') return;
+    const sec = Math.max(5, (+s.updEvery || 1) * ({ s: 1, m: 60, h: 3600 }[s.updUnit] || 60));
+    timer = setTimeout(async () => { await probe(); schedule(); }, sec * 1000);
+  }
+  function startWatch() {
+    if (Store.data.settings.updMode !== 'off') setTimeout(full, 1500);
+    schedule();
+  }
+  return { afterUpdate, available, startWatch, schedule, clean };
 })();
