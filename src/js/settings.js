@@ -25,7 +25,7 @@ const Updater = (() => {
     return r;
   }
   const short = v => { const p = String(v).split('.'); return p[0] + '.' + (p[1] || 0) + (p[2] && p[2] !== '0' ? '.' + p[2] : ''); };
-  return { check, install, get last() { return last; }, short };
+  return { check, install, get last() { return last; }, short, verCode };
 })();
 
 Views.settings = (() => {
@@ -37,7 +37,9 @@ Views.settings = (() => {
     </section>
     <section class="card" id="upd-card"><h3>Güncelleme</h3>
       <p>Yüklü sürüm: <b>Comm Calc v${App.short}</b></p>
-      <label class="chk"><input type="checkbox" id="s-auto"${s.autoUpdate ? ' checked' : ''}> Program açılırken güncellemeleri denetle</label>
+      <div class="upd-set"><label>Otomatik denetim <select id="s-umode">${[['off', 'Kapalı'], ['start', 'Yalnızca program açılırken'], ['interval', 'Açılışta ve belirli aralıklarla']].map(([k, l]) => `<option value="${k}"${s.updMode === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label id="s-uint"${s.updMode === 'interval' ? '' : ' hidden'}>Aralık: her <input type="number" id="s-uevery" min="1" step="1" value="${s.updEvery}"> <select id="s-uunit">${[['s', 'saniye'], ['m', 'dakika'], ['h', 'saat']].map(([k, l]) => `<option value="${k}"${s.updUnit === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
+      <p class="muted small">Yeni sürüm çıkınca ekranda bildirim penceresi açılır. En kısa aralık 5 saniyedir; GitHub yeni sürümü birkaç dakika içinde duyurur.</p>
       <div class="row-btns"><button class="btn primary" id="s-check">Güncellemeleri denetle</button></div>
       <div id="upd-out"></div>
     </section>
@@ -71,7 +73,9 @@ Views.settings = (() => {
       <p class="muted small">Kaynak ve sürümler: <a href="#" data-url="https://github.com/${App.repo}/releases">github.com/${App.repo}</a> ${PLAT === 'desktop' ? ' · Kısayollar: F11 tam ekran, F12 geliştirici araçları.' : ''}</p>
     </section>`;
     const save = () => Store.save();
-    $('#s-auto', el).onchange = e => { s.autoUpdate = e.target.checked; save(); };
+    $('#s-umode', el).onchange = e => { s.updMode = e.target.value; s.autoUpdate = s.updMode !== 'off'; $('#s-uint', el).hidden = s.updMode !== 'interval'; save(); News.schedule(); };
+    $('#s-uevery', el).onchange = e => { s.updEvery = Math.max(1, Math.round(+e.target.value) || 1); e.target.value = s.updEvery; save(); News.schedule(); };
+    $('#s-uunit', el).onchange = e => { s.updUnit = e.target.value; save(); News.schedule(); };
     $('#s-fb', el).oninput = e => { s.firebase = e.target.value; save(); };
     $('#s-key', el).oninput = e => { s.geminiKey = e.target.value.trim(); save(); };
     $('#s-model', el).oninput = e => { s.aiModel = e.target.value.trim(); save(); };
@@ -122,7 +126,7 @@ Views.settings = (() => {
     if (!out.isConnected) return;
     if (!r || !r.ok) { out.innerHTML = `<p class="warn-t">${t('Denetlenemedi: {e}. İnternet bağlantısını kontrol edin.', { e: esc((r && r.error) || t('bilinmeyen hata')) })}</p>`; return; }
     if (!r.available) { out.innerHTML = `<p class="ok-t">✓ En güncel sürümü kullanıyorsunuz (v${Updater.short(r.current)}).</p>`; return; }
-    out.innerHTML = `<div class="upd-box"><p><b>Yeni sürüm: v${Updater.short(r.version)}</b></p>${r.notes ? `<pre class="notes">${esc(r.notes)}</pre>` : ''}
+    out.innerHTML = `<div class="upd-box"><p><b>Yeni sürüm: v${Updater.short(r.version)}</b></p>${News.clean(r.notes) ? `<pre class="notes">${esc(News.clean(r.notes))}</pre>` : ''}
       <div class="row-btns">${r.web ? `<button class="btn primary" data-go="${esc(r.pageUrl)}">Sürüm sayfasını aç</button>`
         : r.needsFull ? `<button class="btn primary" data-go="${esc(r.exeUrl || r.pageUrl)}">Yeni programı indir</button><span class="muted small">Bu sürüm program dosyasının yenilenmesini gerektiriyor.</span>`
         : '<button class="btn primary" id="u-inst">Güncelle ve yeniden başlat</button>'}</div><p class="muted small" id="u-st"></p></div>`;
