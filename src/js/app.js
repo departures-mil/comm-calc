@@ -1,6 +1,6 @@
 // Uygulama kabuğu: gezinme, tema, açılışta güncelleme denetimi.
 const App = {
-  version: '1.8.0', short: '1.8', repo: 'departures-mil/comm-calc', current: null,
+  version: '1.9.0', short: '1.9', repo: 'departures-mil/comm-calc', current: null,
   NAV: [['budget', 'Link Bütçesi', '⟿'], ['tools', 'Araçlar', '⚙'], ['tables', 'Tablolar', '▦'], ['antennas', 'Antenler', '⌁'], ['library', 'Kütüphane', '☰'], ['learn', 'Eğitim', '✎'], ['settings', 'Ayarlar', '⛭']],
   async start() {
     if (window.api) { const i = await window.api.info(); this.version = i.version; this.short = i.short; this.repo = i.repo; }
@@ -13,6 +13,9 @@ const App = {
     if (window.api) window.api.updateOk();
     News.afterUpdate();
     News.startWatch();
+    // Admin duyuruları: yeni duyuru ekranda açılır, sonra 🔔 düğmesinden tekrar okunur
+    window.duyuruLinkAc = u => openUrl(u);
+    Duyuru.baslat({ uygulama: 'comm-calc', surum: this.version, dil: () => (I18N.lang === 'sq' ? 'en' : I18N.lang), guncelle: () => this.go('settings') });
   },
   // Dil değişince yeniden çizilen kabuk: menü, alt bilgi, dil seçici
   renderShell() {
