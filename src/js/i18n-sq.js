@@ -1,5 +1,9 @@
 // Arnavutça (Shqip) çeviriler: İngilizce metne göre eşlenir (bkz. I18N.fromEnglish). Eksik kalan satırda İngilizcesi görünür.
 I18N.fromEnglish('sq', {
+  "Google Gemini is used to extract specs automatically from a product image or technical text. Enter your own free Gemini API key or your own Firebase project; usage counts only against your own account (shown under Usage limits in Settings).": "Google Gemini përdoret për të nxjerrë automatikisht specifikimet nga një imazh produkti ose tekst teknik. Vendosni çelësin tuaj falas Gemini API ose projektin tuaj Firebase; përdorimi llogaritet vetëm në llogarinë tuaj (shfaqet te Kufijtë e përdorimit në Cilësime).",
+  "Your own Firebase project": "Projekti juaj Firebase",
+  "or your own Gemini API key": "ose çelësi juaj Gemini API",
+  "Enter your own Gemini API key or your own Firebase project in Settings → Online product recognition.": "Vendosni çelësin tuaj Gemini API ose projektin tuaj Firebase te Cilësimet → Njohja e produkteve në internet.",
   // Kabuk ve ortak
   "Link Budget": "Buxheti i lidhjes",
   "Tools": "Mjetet",
