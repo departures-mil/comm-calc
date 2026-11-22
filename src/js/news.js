@@ -1,6 +1,10 @@
 // Sürüm yenilikleri: güncellemeden sonraki ilk açılışta ekranda gösterilir.
 // Her yeni sürümde en üste bir kayıt eklenir (tr, en, ar, sq; her biri madde listesi).
 const NEWS = [
+  { v: '1.9', tr: ['Admin duyuruları eklendi: yeni duyurular programda görünür, 🔔 düğmesinden tekrar okunur.'],
+    en: ['Admin announcements added: new announcements appear in the program and can be re-read from the 🔔 button.'],
+    ar: ['أُضيفت إعلانات المدير: تظهر الإعلانات الجديدة في البرنامج ويمكن قراءتها مجددًا من زر 🔔.'],
+    sq: ['U shtuan njoftimet e administratorit: njoftimet e reja shfaqen në program dhe mund të rilexohen nga butoni 🔔.'] },
   { v: '1.8', tr: ['Güncelleme denetimi sadeleştirildi: program her açılışta yeni sürüme bakar, varsa ekranda bildirim çıkar. Aralıklı denetim kaldırıldı.'],
     en: ['Update checking simplified: the program checks for a new version every time it starts and shows a notification on screen if there is one. Interval checking was removed.'],
     ar: ['تبسيط التحقق من التحديثات: يتحقق البرنامج من وجود إصدار جديد عند كل تشغيل ويعرض إشعارًا على الشاشة إن وُجد. أُزيل التحقق على فترات.'],
