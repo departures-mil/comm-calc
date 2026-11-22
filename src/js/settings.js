@@ -43,10 +43,10 @@ Views.settings = (() => {
       <div id="upd-out"></div>
     </section>
     <section class="card"><h3>Çevrimiçi ürün tanıma</h3>
-      <p class="muted small">Ürün görseli veya teknik metinden bilgileri otomatik çıkarmak için Google Gemini kullanılır. Program kendi Firebase projesiyle (Comm Calc) hazır gelir; aşağıdakileri yalnızca başka bir proje veya kendi anahtarınızı kullanmak isterseniz doldurun.</p>
-      <label class="full"><span><b>Başka Firebase projesi (isteğe bağlı)</b> — Firebase konsolu → Proje ayarları → Web uygulaması → <code>firebaseConfig</code> bloğunu olduğu gibi yapıştırın (AI Logic → Gemini Developer API etkin olmalı)</span>
+      <p class="muted small">Ürün görseli veya teknik metinden bilgileri otomatik çıkarmak için Google Gemini kullanılır. Kendi ücretsiz Gemini API anahtarınızı ya da kendi Firebase projenizi girin; kullanım yalnızca sizin hesabınızdan düşer (Ayarlar'daki Kullanım Limitleri'nde görünür).</p>
+      <label class="full"><span><b>Kendi Firebase projeniz</b> — Firebase konsolu → Proje ayarları → Web uygulaması → <code>firebaseConfig</code> bloğunu olduğu gibi yapıştırın (AI Logic → Gemini Developer API etkin olmalı)</span>
         <textarea id="s-fb" rows="6" placeholder="const firebaseConfig = { apiKey: '...', authDomain: '...', projectId: '...', appId: '...' };">${esc(s.firebase)}</textarea></label>
-      <label class="full"><span><b>veya kendi Gemini API anahtarınız (isteğe bağlı)</b> — <a href="#" data-url="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></span><input id="s-key" type="password" value="${esc(s.geminiKey)}" placeholder="AIza…"></label>
+      <label class="full"><span><b>veya kendi Gemini API anahtarınız</b> — <a href="#" data-url="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></span><input id="s-key" type="password" value="${esc(s.geminiKey)}" placeholder="AIza…"></label>
       <label><span>Model</span><input id="s-model" value="${esc(s.aiModel)}"></label>
       <div class="row-btns"><button class="btn" id="s-test">Bağlantıyı test et</button><span id="s-test-out" class="muted small"></span></div>
     </section>
@@ -57,6 +57,7 @@ Views.settings = (() => {
       <p class="muted small">${PLAT === 'android' ? t('Projeler, kütüphane ve ayarlar telefonda, uygulamanın kendi klasöründe saklanır; güncellemeler bu verilere dokunmaz.') : window.api ? t('Projeler, kütüphane ve ayarlar bilgisayarda {f} dosyasında saklanır; güncellemeler bu verilere dokunmaz.', { f: '<code>%APPDATA%\\Comm Calc\\veri.json</code>' }) : t('Projeler, kütüphane ve ayarlar tarayıcıda saklanır; güncellemeler bu verilere dokunmaz.')}</p>
       <div class="row-btns"><button class="btn" id="s-bak">Tüm verileri yedekle</button><button class="btn" id="s-res">Yedekten geri yükle</button>${PLAT === 'desktop' ? '<button class="btn" id="s-dir">Veri klasörünü aç</button>' : ''}</div>
     </section>
+    <section class="card" id="kul-yer"></section>
     <section class="card" id="contact"><h3>Yöneticiye mesaj gönder</h3>
       <p class="muted small">Öneri, hata bildirimi veya sorunuzu yazın; mesaj doğrudan program yöneticisine iletilir. Size dönüş yapılmasını istiyorsanız e-posta veya telefon bırakın.</p>
       <div class="form">
@@ -72,6 +73,7 @@ Views.settings = (() => {
       <p class="muted small">Kaynak ve sürümler: <a href="#" data-url="https://github.com/${App.repo}/releases">github.com/${App.repo}</a> ${PLAT === 'desktop' ? ' · Kısayollar: F11 tam ekran, F12 geliştirici araçları.' : ''}</p>
     </section>`;
     const save = () => Store.save();
+    { const ky = $('#kul-yer', el); if (ky && window.Kullanim) { const k = Kullanim.kart(); k.classList.add('card'); k.setAttribute('data-notr', ''); ky.replaceWith(k); } }
     $('#s-auto', el).onchange = e => { s.autoUpdate = e.target.checked; save(); };
     $('#s-fb', el).oninput = e => { s.firebase = e.target.value; save(); };
     $('#s-key', el).oninput = e => { s.geminiKey = e.target.value.trim(); save(); };

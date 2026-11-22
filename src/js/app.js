@@ -15,6 +15,7 @@ const App = {
     News.startWatch();
     // Admin duyuruları: yeni duyuru ekranda açılır, sonra 🔔 düğmesinden tekrar okunur
     window.duyuruLinkAc = u => openUrl(u);
+    Kullanim.baslat({ uygulama: 'comm-calc', bulut: false, ai: true, aiAd: 'Gemini', dil: () => (I18N.lang === 'sq' ? 'en' : I18N.lang) });
     Duyuru.baslat({ uygulama: 'comm-calc', surum: this.version, dil: () => (I18N.lang === 'sq' ? 'en' : I18N.lang), guncelle: () => this.go('settings') });
   },
   // Dil değişince yeniden çizilen kabuk: menü, alt bilgi, dil seçici

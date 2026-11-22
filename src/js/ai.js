@@ -58,7 +58,8 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
   // ---- Yapılandırma: kullanıcının yapıştırdığı firebaseConfig bloğunu esnek biçimde okur; yoksa programla gelen proje
   function firebaseConfig() {
     const raw = (Store.data.settings.firebase || '').trim();
-    if (!raw) return BUILTIN;
+    // v1.9: programla gelen proje (BUILTIN) artık yapay zekâ için kullanılmaz — herkes kendi anahtarı/projesi (yöneticinin kotası)
+    if (!raw) return null;
     try { return JSON.parse(raw); } catch {}
     const o = {};
     for (const k of ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'measurementId']) {
@@ -91,6 +92,7 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     // Kullanıcı kendi Gemini anahtarını girdiyse o, yoksa Firebase AI Logic kullanılır
     const cfg = key ? null : firebaseConfig();
     if (cfg && window.CCFirebase) return window.CCFirebase.generate(cfg, model, parts);
+    if (!key && !cfg) throw new Error(t('Kendi Gemini API anahtarınızı ya da kendi Firebase projenizi Ayarlar → Çevrimiçi ürün tanıma bölümüne girin.'));
     if (!key) throw new Error(t('Çevrimiçi tanıma modülü yüklenemedi.'));
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },

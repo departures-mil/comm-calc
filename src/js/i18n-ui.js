@@ -513,7 +513,7 @@ I18N.rows([
   ["bilinmeyen hata", "unknown error", "خطأ غير معروف"],
   ["Çalışıyor:", "Working:", "يعمل:"],
   ["Çevrimiçi ürün tanıma", "Online product recognition", "التعرّف على المنتجات عبر الإنترنت"],
-  ["Ürün görseli veya teknik metinden bilgileri otomatik çıkarmak için Google Gemini kullanılır. Program kendi Firebase projesiyle (Comm Calc) hazır gelir; aşağıdakileri yalnızca başka bir proje veya kendi anahtarınızı kullanmak isterseniz doldurun.", "Google Gemini is used to extract specs automatically from a product image or technical text. The program comes ready with its own Firebase project (Comm Calc); fill in the fields below only if you want to use another project or your own key.", "يُستخدم Google Gemini لاستخراج المواصفات تلقائيًا من صورة المنتج أو النص الفني. يأتي البرنامج جاهزًا بمشروع Firebase خاص به (Comm Calc)؛ املأ الحقول أدناه فقط إذا أردت استخدام مشروع آخر أو مفتاحك الخاص."],
+  ["Ürün görseli veya teknik metinden bilgileri otomatik çıkarmak için Google Gemini kullanılır. Kendi ücretsiz Gemini API anahtarınızı ya da kendi Firebase projenizi girin; kullanım yalnızca sizin hesabınızdan düşer (Ayarlar'daki Kullanım Limitleri'nde görünür).", "Google Gemini is used to extract specs automatically from a product image or technical text. Enter your own free Gemini API key or your own Firebase project; usage counts only against your own account (shown under Usage limits in Settings).", "يُستخدم Google Gemini لاستخراج المواصفات تلقائيًا من صورة المنتج أو النص الفني. أدخل مفتاح Gemini API المجاني الخاص بك أو مشروع Firebase الخاص بك؛ يُحتسب الاستخدام على حسابك فقط (يظهر في حدود الاستخدام في الإعدادات)."],
   ["Başka Firebase projesi (isteğe bağlı)", "Another Firebase project (optional)", "مشروع Firebase آخر (اختياري)"],
   ["— Firebase konsolu → Proje ayarları → Web uygulaması →", "— Firebase console → Project settings → Web app →", "— وحدة تحكم Firebase ← إعدادات المشروع ← تطبيق الويب ←"],
   ["bloğunu olduğu gibi yapıştırın (AI Logic → Gemini Developer API etkin olmalı)", "paste the block as is (AI Logic → Gemini Developer API must be enabled)", "الصق الكتلة كما هي (يجب تفعيل AI Logic ← Gemini Developer API)"],
@@ -575,5 +575,8 @@ I18N.rows([
   ["saniye", "seconds", "ثانية"],
   ["dakika", "minutes", "دقيقة"],
   ["saat", "hours", "ساعة"],
-  ["Yeni sürüm çıkınca ekranda bildirim penceresi açılır. En kısa aralık 5 saniyedir; GitHub yeni sürümü birkaç dakika içinde duyurur.", "When a new version is out, a notification window opens on screen. The shortest interval is 5 seconds; GitHub announces a new version within a few minutes.", "عند صدور إصدار جديد تُفتح نافذة إشعار على الشاشة. أقصر فاصل هو 5 ثوانٍ؛ يُعلن GitHub عن الإصدار الجديد خلال بضع دقائق."]
+  ["Yeni sürüm çıkınca ekranda bildirim penceresi açılır. En kısa aralık 5 saniyedir; GitHub yeni sürümü birkaç dakika içinde duyurur.", "When a new version is out, a notification window opens on screen. The shortest interval is 5 seconds; GitHub announces a new version within a few minutes.", "عند صدور إصدار جديد تُفتح نافذة إشعار على الشاشة. أقصر فاصل هو 5 ثوانٍ؛ يُعلن GitHub عن الإصدار الجديد خلال بضع دقائق."],
+  ["Kendi Firebase projeniz", "Your own Firebase project", "مشروع Firebase الخاص بك"],
+  ["veya kendi Gemini API anahtarınız", "or your own Gemini API key", "أو مفتاح Gemini API الخاص بك"],
+  ["Kendi Gemini API anahtarınızı ya da kendi Firebase projenizi Ayarlar → Çevrimiçi ürün tanıma bölümüne girin.", "Enter your own Gemini API key or your own Firebase project in Settings → Online product recognition.", "أدخل مفتاح Gemini API الخاص بك أو مشروع Firebase الخاص بك في الإعدادات ← التعرّف على المنتجات عبر الإنترنت."],
 ]);
