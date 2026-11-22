@@ -1,7 +1,9 @@
-## Comm Calc v1.8
+## Comm Calc v1.10
 
-Güncelleme denetimi sadeleştirildi: program her açılışta yeni sürüme bakar, varsa ekranda bildirim çıkar. Aralıklı (periyodik) denetim kaldırıldı.
+- Sağ üstte Güncelle ve Eşitle düğmeleri
+- Güncelleme inerken yüzde, MB (inen/toplam/kalan) ve indirme hızı
+- Wi-Fi ile internetsiz eşitleme (aynı modem; iki yönlü, kayıp yok)
+- Program her açılışta tam ekran
+- (v1.9) Admin duyuruları, Kullanım Limitleri, ürün tanıma yalnız kendi anahtarınızla
 
 **Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).
-
-**Android:** `Comm-Calc-v1.8.apk` dosyasını telefona indirip kurun. Kurulu uygulama sonraki sürümleri kendi içinden günceller.

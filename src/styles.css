@@ -288,3 +288,15 @@ svg, .formula, .sw, input[type=number], input[type=range] { direction: ltr; }
 .upd-set { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 6px 0; }
 .upd-set label { display: flex; gap: 8px; align-items: center; }
 .upd-set input[type=number] { width: 80px; }
+
+/* sağ üst: güncelle / eşitle */
+.top-acts { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.top-btn { position: relative; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; }
+.top-btn .upd-dot { position: absolute; top: 6px; right: 6px; }
+.top-btn.busy svg { animation: ccspin 1s linear infinite; }
+@keyframes ccspin { to { transform: rotate(360deg); } }
+.lan-dlg .card { margin: 10px 0; }
+.lan-dlg label.full { display: block; margin: 8px 0; }
+.lan-dlg label.full span { display: block; margin-bottom: 4px; }
+.lan-dlg input { width: 100%; }
+.lan-pin b { font-size: 26px; letter-spacing: 4px; }

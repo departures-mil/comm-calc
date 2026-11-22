@@ -820,3 +820,30 @@ I18N.fromEnglish('sq', {
       </ul>` }
   ]);
 })();
+
+I18N.fromEnglish('sq', {
+  "Sync": "Sinkronizo",
+  "The program is up to date": "Programi është i përditësuar",
+  "Wi‑Fi sync (no internet)": "Sinkronizim me Wi‑Fi (pa internet)",
+  "No internet needed. Connect both devices to the same Wi‑Fi router. Press \"Wait\" on one, then find its address on the other and enter the code. Records merge both ways; nothing is lost or overwritten — for the same record the latest change wins.": "Nuk nevojitet internet. Lidhni të dy pajisjet me të njëjtin router Wi‑Fi. Shtypni \"Prit\" në njërën, pastaj gjeni adresën e saj në tjetrën dhe vendosni kodin. Të dhënat bashkohen në të dy drejtimet; asgjë nuk humbet apo mbishkruhet — për të njëjtin regjistrim fiton ndryshimi më i fundit.",
+  "1) Let this computer wait": "1) Le këtë kompjuter të presë",
+  "2) Connect to the other device": "2) Lidhu me pajisjen tjetër",
+  "Connect to the computer": "Lidhu me kompjuterin",
+  "Find on network": "Gjej në rrjet",
+  "Address": "Adresa",
+  "Code": "Kodi",
+  "Sync now": "Sinkronizo tani",
+  "Keep the program open until syncing finishes.": "Mbajeni programin të hapur derisa të përfundojë sinkronizimi.",
+  "Opens this computer for syncing; the address and code appear here.": "E hap këtë kompjuter për sinkronizim; adresa dhe kodi shfaqen këtu.",
+  "Stop waiting": "Ndalo pritjen",
+  "Wait (open for sync)": "Prit (hap për sinkronizim)",
+  "Searching…": "Duke kërkuar…",
+  "No waiting device found. You can type the address yourself.": "Nuk u gjet pajisje në pritje. Mund ta shkruani adresën vetë.",
+  "Enter the address and the 6‑digit code.": "Vendosni adresën dhe kodin 6‑shifror.",
+  "Syncing…": "Duke sinkronizuar…",
+  "Synced: {a} new, {u} updated, {r} deleted": "U sinkronizua: {a} të reja, {u} të përditësuara, {r} të fshira",
+  "Wrong code.": "Kod i gabuar.",
+  "Could not reach the device. Are both on the same Wi‑Fi and is \"Wait\" on?": "Pajisja nuk u arrit. A janë të dyja në të njëjtin Wi‑Fi dhe a është \"Prit\" aktiv?",
+  "(other device)": "(pajisja tjetër)",
+  "This is not Comm Calc data": "Këto nuk janë të dhëna Comm Calc",
+});
