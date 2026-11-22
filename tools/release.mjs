@@ -9,7 +9,8 @@ import { fileURLToPath } from 'url';
 import JSZip from 'jszip';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const KEY = '/mnt/project-files/comm-calc-guncelleme-imza/guncelleme-ozel.pem';
+// Özel anahtar depoda değil: C:\Claude Programlarım\_Anahtarlar\CommCalc\guncelleme-ozel.pem (OZEL_ANAHTAR ile verilir)
+const KEY = process.env.OZEL_ANAHTAR || 'C:/Claude Programlarım/_Anahtarlar/CommCalc/guncelleme-ozel.pem';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 const [ma, mi, pa] = pkg.version.split('.');
