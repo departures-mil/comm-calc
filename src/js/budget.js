@@ -128,7 +128,7 @@ Views.budget = (() => {
     }
     if (a === 'del') {
       if (D.projects.length < 2) return toast('Son proje silinemez', 'err');
-      if (!await confirmBox(`"${P.name}" silinsin mi?`, 'Sil')) return;
+      if (!await confirmBox(t('"{n}" silinsin mi?', { n: P.name }), t('Sil'))) return;
       D.projects = D.projects.filter(p => p.id !== P.id); D.currentId = D.projects[0].id;
     }
     if (a === 'exp') { await downloadText((P.name || 'link').replace(/[^\wçğıöşüÇĞİÖŞÜ -]/g, '') + '.commcalc.json', JSON.stringify({ commcalc: 1, project: P }, null, 2)); return; }
@@ -165,7 +165,7 @@ Views.budget = (() => {
       const it = P.items.find(i => i.id === kind);
       if (it) {
         it.value = num(x.gain); it.kind = 'gain'; it.auto = undefined; it.on = true;
-        it.name = (it.side === 'tx' ? 'Verici anten: ' : 'Alıcı anten: ') + x.name;
+        it.name = t(it.side === 'tx' ? 'Verici anten:' : 'Alıcı anten:') + ' ' + x.name;
         it.ant = { id: x.id, pol: x.pol, bwH: x.bwH, bwV: x.bwV, fMin: x.fMin, fMax: x.fMax };
         // Yönlendirme ve polarizasyon kalemlerini antene göre güncelle
         const pt = P.items.find(i => i.auto === 'point');
@@ -201,8 +201,8 @@ Views.budget = (() => {
     return `<div class="item${it.on ? '' : ' off'}" data-id="${it.id}">
       <label class="sw" title="Aç / kapat"><input type="checkbox" data-k="on"${it.on ? ' checked' : ''}><span></span></label>
       <button class="sign ${it.kind}" data-k="kind" title="Kazanç / kayıp değiştir">${it.kind === 'gain' ? '+' : '−'}</button>
-      <input class="iname" data-k="name" value="${esc(it.name)}" aria-label="Kalem adı">
-      ${auto ? `<button class="btn xs ghost" data-k="cfg">${AUTO_LABEL[auto]} ⚙</button>` : `<input class="ival" data-k="value" type="number" step="any" value="${it.value}" aria-label="Değer dB">`}
+      <input class="iname" data-k="name" value="${esc(t(it.name))}" aria-label="Kalem adı">
+      ${auto ? `<button class="btn xs ghost" data-k="cfg">${AUTO_LABEL[auto]} <span>⚙</span></button>` : `<input class="ival" data-k="value" type="number" step="any" value="${it.value}" aria-label="Değer dB">`}
       <span class="iout" data-out>—</span>
       <span class="iacts">${isAnt ? `<button class="icon-btn" data-k="lib" title="Kütüphaneden anten seç">⌁</button>` : ''}<button class="icon-btn" data-k="up" title="Yukarı">▲</button><button class="icon-btn" data-k="down" title="Aşağı">▼</button><button class="icon-btn" data-k="del" title="Sil">✕</button></span>
       ${auto && auto !== 'fspl' ? `<div class="icfg" hidden>${cfgHtml(it)}</div>` : ''}
@@ -302,7 +302,7 @@ Views.budget = (() => {
     const warn = warnings(b, r);
     $('#res-hero', root).innerHTML = `
       <div class="hero" style="--q:${q.color}">
-        <div class="hero-main"><div class="big">${fmt(r.prx, 1)}<small> dBm</small></div><div class="muted">Alınan güç · ${fmtPower(r.prx)}</div></div>
+        <div class="hero-main"><div class="big">${fmt(r.prx, 1)}<small> dBm</small></div><div class="muted">${t('Alınan güç')} · ${fmtPower(r.prx)}</div></div>
         <div class="hero-main"><div class="big" style="color:${q.color}">${r.margin >= 0 ? '+' : ''}${fmt(r.margin, 1)}<small> dB</small></div><div class="muted">Link payı (hassasiyete göre)</div></div>
         <div class="hero-q"><span class="qbadge" style="background:${q.color}">${q.label}</span><div class="small">${q.note}</div>
           <div class="meter" title="Sinyal kalitesi"><span style="width:${r.pct}%;background:${q.color}"></span></div><div class="muted small">Sinyal kalitesi %${fmt(r.pct, 0)} (30 dB pay = %100)</div></div>
@@ -326,16 +326,16 @@ Views.budget = (() => {
   function warnings(b, r) {
     const w = [];
     const hz = RF.radioHorizon(num(P.heights.tx), num(P.heights.rx));
-    if (b.dKm > hz) w.push(['err', `Mesafe (${fmtDist(b.dKm)}) radyo ufkunun (${fmtDist(hz)}) ötesinde: Dünya eğriliği görüş hattını keser. Anten yüksekliklerini artırın.`]);
+    if (b.dKm > hz) w.push(['err', t('Mesafe ({d}) radyo ufkunun ({h}) ötesinde: Dünya eğriliği görüş hattını keser. Anten yüksekliklerini artırın.', { d: fmtDist(b.dKm), h: fmtDist(hz) })]);
     const f1 = RF.fresnel(1, b.fMHz, b.dKm / 2, b.dKm / 2), bulge = RF.earthBulge(b.dKm);
     const clear = Math.min(num(P.heights.tx), num(P.heights.rx)) - bulge;
     if (clear < 0.6 * f1 && b.dKm <= hz) w.push(['warn', `Fresnel bölgesinin %60\'ı açık olmayabilir (gereken ≈${fmt(0.6 * f1, 1)} m, alçak uçta ≈${fmt(clear, 1)} m). Yerden yansıma/engel nedeniyle ek 3–10 dB kayıp olabilir.`]);
     for (const it of P.items) if (it.on && it.ant && it.ant.fMin && it.ant.fMax && (b.fMHz < it.ant.fMin || b.fMHz > it.ant.fMax))
-      w.push(['warn', `"${esc(it.name)}" ${it.ant.fMin}–${it.ant.fMax} MHz için; ${fmt(b.fMHz, 0)} MHz bu aralığın dışında.`]);
+      w.push(['warn', t('"{n}" {a}–{b} MHz için; {f} MHz bu aralığın dışında.', { n: esc(t(it.name)), a: it.ant.fMin, b: it.ant.fMax, f: fmt(b.fMHz, 0) })]);
     const tx = P.items.find(i => i.on && i.role === 'txAnt' && i.ant), rx = P.items.find(i => i.on && i.role === 'rxAnt' && i.ant);
     const pol = P.items.find(i => i.auto === 'pol');
     if (tx && rx && tx.ant.pol && rx.ant.pol && RF.polMismatch(tx.ant.pol, rx.ant.pol) > 0 && !(pol && pol.on))
-      w.push(['warn', `Antenlerin polarizasyonu farklı (${tx.ant.pol} ↔ ${rx.ant.pol}): ≈${RF.polMismatch(tx.ant.pol, rx.ant.pol)} dB kayıp. "Polarizasyon uyumsuzluğu" kalemini açın.`]);
+      w.push(['warn', t('Antenlerin polarizasyonu farklı ({a} ↔ {b}): ≈{l} dB kayıp. "Polarizasyon uyumsuzluğu" kalemini açın.', { a: esc(tx.ant.pol), b: esc(rx.ant.pol), l: RF.polMismatch(tx.ant.pol, rx.ant.pol) })]);
     if (!P.items.some(i => i.on && i.auto === 'fspl')) w.push(['warn', 'Serbest uzay kaybı kalemi kapalı; menzil hesaplanamaz.']);
     return w;
   }
@@ -362,7 +362,7 @@ Views.budget = (() => {
       <text x="272" y="96" class="b-s">EIRP ${fmt(r.eirp, 1)} dBm</text>
       ${waves}
       <line x1="300" y1="56" x2="600" y2="56" class="b-path"/>
-      <text x="450" y="30" class="b-l" text-anchor="middle">Yol kaybı (${fmtDist(b.dKm)})</text><text x="450" y="100" class="b-n loss" text-anchor="middle">${sg(path)}</text>
+      <text x="450" y="30" class="b-l" text-anchor="middle">${t('Yol kaybı ({d})', { d: fmtDist(b.dKm) })}</text><text x="450" y="100" class="b-n loss" text-anchor="middle">${sg(path)}</text>
       <text x="450" y="120" class="b-s" text-anchor="middle">FSPL ${fmt(r.fsplDb, 1)} dB</text>
       ${ant(640, 114)}
       <text x="640" y="30" class="b-l" text-anchor="middle">Anten kazancı</text><text x="640" y="186" class="b-n gain" text-anchor="middle">${sg(rxAnt)}</text>
@@ -375,7 +375,7 @@ Views.budget = (() => {
 
   // ---- Seviye diyagramı
   function levelSvg(b, r) {
-    const pts = [{ name: 'Tx çıkışı', level: b.txDbm, side: 'tx', v: null }].concat(r.rows.filter(x => x.it.on).map(x => ({ name: x.it.name, level: x.level, side: x.it.side, v: x.signed })));
+    const pts = [{ name: t('Tx çıkışı'), level: b.txDbm, side: 'tx', v: null }].concat(r.rows.filter(x => x.it.on).map(x => ({ name: t(x.it.name), level: x.level, side: x.it.side, v: x.signed })));
     const W = 900, H = 330, L = 56, R = 20, T = 24, B = 120;
     const ys = pts.map(p => p.level).concat([b.sens, b.sens + b.fade]);
     let ymax = Math.ceil((Math.max(...ys) + 8) / 10) * 10, ymin = Math.floor((Math.min(...ys) - 8) / 10) * 10;
@@ -458,7 +458,7 @@ Views.budget = (() => {
       <line x1="${X(0)}" y1="${Y(h1)}" x2="${X(1)}" y2="${Y(h2)}" class="los-line"/>
       <line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(h1)}" class="los-mast"/><line x1="${X(1)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(h2)}" class="los-mast"/>
       <text x="${X(0) + 6}" y="${Y(h1) - 6}" class="ax">Tx ${fmt(h1, 0)} m</text><text x="${X(1) - 6}" y="${Y(h2) - 6}" text-anchor="end" class="ax">Rx ${fmt(h2, 0)} m</text>
-      <text x="${X(0.5)}" y="${H - 6}" text-anchor="middle" class="ax">${fmtDist(b.dKm)} — Dünya eğriliği (4/3) ve 1. Fresnel bölgesi</text></svg>`;
+      <text x="${X(0.5)}" y="${H - 6}" text-anchor="middle" class="ax">${fmtDist(b.dKm)} — ${t('Dünya eğriliği (4/3) ve 1. Fresnel bölgesi')}</text></svg>`;
     function botPath() {
       let d = '';
       for (let i = 0; i <= 60; i++) { const t = i / 60, d1 = t * b.dKm, d2 = b.dKm - d1; const fr = (d1 > 0 && d2 > 0) ? RF.fresnel(1, b.fMHz, d1, d2) : 0; d += (i ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(h1 + (h2 - h1) * t - fr).toFixed(1); }

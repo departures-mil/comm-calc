@@ -66,7 +66,7 @@ Views.antennas = (() => {
       extra = `<label class="slider">${lab[1]}: <b id="sl-v">${val}</b><input type="range" id="sl" min="${lab[2]}" max="${lab[3]}" step="${lab[4]}" value="${val}"></label>`;
     }
     box.innerHTML = `<section class="card"><div class="ant-head"><h2>${a.name}</h2><span class="tag">${a.group}</span></div>
-      <div class="kv"><div><span>Tipik kazanç</span><b>${a.gain}</b></div><div><span>Hüzme genişliği</span><b>${a.bw}</b></div><div><span>Polarizasyon</span><b>${a.pol}</b></div></div>
+      <div class="kv"><div><span>Tipik kazanç</span><b>${a.gain}</b></div><div><span>Yatay hüzme (H)</span><b>${a.bwH || a.bw}</b></div><div><span>Dikey hüzme (V)</span><b>${a.bwV || '—'}</b></div><div><span>Polarizasyon</span><b>${a.pol}</b></div></div>
       <p>${a.desc}</p><div class="callout"><b>İHA\'da kullanım:</b> ${a.uav}</div>
       <div class="pc"><div><h4>Artıları</h4><ul>${a.pros.map(x => `<li>${x}</li>`).join('')}</ul></div><div><h4>Eksileri</h4><ul>${a.cons.map(x => `<li>${x}</li>`).join('')}</ul></div></div>
       ${extra}<div id="pl">${plots(m)}</div></section>`;

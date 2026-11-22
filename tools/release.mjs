@@ -1,13 +1,14 @@
-// Yeni sürüm yayınlar: imzalı uygulama içi güncelleme paketini hazırlar, sürüm notunu yazar, etiketleyip GitHub'a gönderir.
-// GitHub Actions (release.yml) etiketi görünce Windows'ta taşınabilir exe ve RAR üretir, hepsini sürüme ekler.
+// Yeni sürüm yayınlar: imzalı uygulama içi güncelleme paketini hazırlar, sürüm notunu yazar ve GitHub'a gönderir.
+// GitHub Actions (release.yml) guncelleme.json değişince bu paketle GitHub sürümünü yayınlar (exe/RAR üretilmez).
 // Kullanım: node tools/release.mjs --notes "Yenilikler (Türkçe, satır satır)" [--min-shell 1] [--no-push]
 import { execFileSync } from 'child_process';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import JSZip from 'jszip';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const KEY = '/mnt/project-files/comm-calc-guncelleme-imza/guncelleme-ozel.pem';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
@@ -15,7 +16,7 @@ const [ma, mi, pa] = pkg.version.split('.');
 const short = ma + '.' + mi + (pa && pa !== '0' ? '.' + pa : '');
 const tag = 'v' + short;
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).trim();
-if (git('tag', '-l', tag)) { console.error(`${tag} zaten var; package.json sürümünü yükseltin.`); process.exit(1); }
+try { const old = JSON.parse(fs.readFileSync(path.join(ROOT, 'release/guncelleme.json'), 'utf8')); if (old.version === pkg.version && !arg('force')) { console.error(`${tag} zaten yayınlandı; package.json sürümünü yükseltin.`); process.exit(1); } } catch {}
 
 execFileSync(process.execPath, [path.join(ROOT, 'web/build.mjs')], { stdio: 'inherit' });
 const zip = new JSZip();
@@ -32,9 +33,17 @@ fs.mkdirSync(path.join(ROOT, 'release'), { recursive: true });
 fs.writeFileSync(path.join(ROOT, 'release/guncelleme.zip'), data);
 fs.writeFileSync(path.join(ROOT, 'release/guncelleme.json'), JSON.stringify({ version: pkg.version, sha256, sig, minShell: +arg('min-shell', pkg.ccShell || 1) }, null, 1));
 const notes = String(arg('notes', '') === true ? '' : arg('notes', ''));
-fs.writeFileSync(path.join(ROOT, 'release/NOTLAR.md'), `## Comm Calc ${tag}\n\n${notes}\n\n**Kurulum:** \`Comm-Calc-${tag}-Tasinabilir.exe\` dosyasını indirip çalıştırın (kurulum gerekmez) veya \`Comm-Calc-${tag}.rar\` arşivini açın.\nYüklü programda: Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).\n`);
+// --apk: android/build.sh ile üretilen APK sürüme eklenir (önceki APK release/ klasöründen kaldırılır)
+let apkNote = '';
+if (arg('apk')) {
+  const apk = path.join(ROOT, 'android/out', `Comm-Calc-${tag}.apk`);
+  if (!fs.existsSync(apk)) { console.error(`${apk} yok; önce android/build.sh çalıştırın.`); process.exit(1); }
+  for (const n of fs.readdirSync(path.join(ROOT, 'release'))) if (n.endsWith('.apk')) fs.rmSync(path.join(ROOT, 'release', n));
+  fs.copyFileSync(apk, path.join(ROOT, 'release', path.basename(apk)));
+  apkNote = `\n**Android:** \`${path.basename(apk)}\` dosyasını telefona indirip kurun. Kurulu uygulama sonraki sürümleri kendi içinden günceller.\n`;
+} else for (const n of fs.readdirSync(path.join(ROOT, 'release'))) if (n.endsWith('.apk')) fs.rmSync(path.join(ROOT, 'release', n));
+fs.writeFileSync(path.join(ROOT, 'release/NOTLAR.md'), `## Comm Calc ${tag}\n\n${notes}\n\n**Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).\n${apkNote}`);
 console.log(`${tag}: paket ${(data.length / 1024).toFixed(0)} KB, sha256 ${sha256.slice(0, 12)}…`);
 git('add', '-A');
 try { git('commit', '-m', `Comm Calc ${tag}\n\n${notes}` + (process.env.CC_TRAILER ? '\n\n' + process.env.CC_TRAILER : '')); } catch {}
-git('tag', tag);
-if (!arg('no-push')) { execFileSync('git', ['push', '-u', 'origin', 'main', '--tags'], { cwd: ROOT, stdio: 'inherit' }); console.log(`${tag} gönderildi; GitHub Actions exe + RAR üretip sürümü yayınlayacak.`); }
+if (!arg('no-push')) { execFileSync('git', ['push', '-u', 'origin', 'main'], { cwd: ROOT, stdio: 'inherit' }); console.log(`${tag} gönderildi; GitHub Actions sürümü yayınlayacak.`); }
