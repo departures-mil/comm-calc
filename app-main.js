@@ -25,6 +25,7 @@ function createWindow() {
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
+  win.maximize();   // her açılışta tam ekran (pencere düğmeleri yerinde)
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
   // Dış bağlantılar varsayılan tarayıcıda açılır
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
@@ -75,6 +76,30 @@ async function getBuf(url) {
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return Buffer.from(await r.arrayBuffer());
 }
+// İndirirken yüzde / MB / kalan / hız bilgisini arayüze gönderir
+async function getBufProgress(url, size) {
+  const r = await net.fetch(url, { headers: { 'User-Agent': 'CommCalc/' + PKG.version } });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const total = size || +r.headers.get('content-length') || 0;
+  const reader = r.body.getReader(), parts = [], samples = [{ t: Date.now(), b: 0 }];
+  let got = 0, last = 0;
+  const send = done => {
+    const now = Date.now(); samples.push({ t: now, b: got });
+    while (samples.length > 2 && now - samples[0].t > 3000) samples.shift();
+    const sec = (now - samples[0].t) / 1000, hiz = sec > 0.25 ? (got - samples[0].b) / sec : 0;
+    const tt = total && got <= total ? total : 0;
+    try { win.webContents.send('update:progress', { inen: got, toplam: tt, yuzde: tt ? got / tt * 100 : 0, kalan: tt ? tt - got : 0, hiz, bitti: !!done }); } catch {}
+  };
+  send(false);
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(Buffer.from(value)); got += value.length;
+    if (Date.now() - last > 200) { last = Date.now(); send(false); }
+  }
+  send(true);
+  return Buffer.concat(parts);
+}
 ipcMain.handle('update:check', async () => {
   try {
     const rel = await getJson(`https://api.github.com/repos/${REPO}/releases/latest`);
@@ -99,7 +124,8 @@ ipcMain.handle('update:install', async () => {
     if (!asset('guncelleme.json') || !asset('guncelleme.zip')) return { ok: false, error: 'Sürümde güncelleme paketi yok' };
     const info = JSON.parse((await getBuf(asset('guncelleme.json').browser_download_url)).toString('utf8'));
     if ((info.minShell || 1) > SHELL.shell) return { ok: false, error: 'full' };
-    const buf = await getBuf(asset('guncelleme.zip').browser_download_url);
+    const za = asset('guncelleme.zip');
+    const buf = await getBufProgress(za.browser_download_url, za.size);
     const sha = crypto.createHash('sha256').update(buf).digest('hex');
     if (sha !== info.sha256 || !signed(info.version, sha, info.sig)) return { ok: false, error: 'İmza doğrulanamadı' };
     const zip = await JSZip.loadAsync(buf);
@@ -119,6 +145,23 @@ ipcMain.handle('update:install', async () => {
     for (const n of fs.readdirSync(SHELL.updDir)) if (/^v\d/.test(n) && n !== name) try { fs.rmSync(path.join(SHELL.updDir, n), { recursive: true, force: true }); } catch {}
     return { ok: true, version: info.version };
   } catch (err) { return { ok: false, error: String(err.message || err) }; }
+});
+// ---- İnternetsiz eşitleme (aynı Wi-Fi / modem)
+const LAN = require('./lib/lan-sync');
+const lanWaits = {};
+ipcMain.on('lan:reply', (e, { id, data }) => { const f = lanWaits[id]; delete lanWaits[id]; if (f) f(data); });
+ipcMain.handle('lan:start', async () => LAN.start(theirs => new Promise((ok, fail) => {
+  const id = crypto.randomUUID();
+  lanWaits[id] = ok;
+  setTimeout(() => { if (lanWaits[id]) { delete lanWaits[id]; fail(new Error('timeout')); } }, 30000);
+  win.webContents.send('lan:incoming', { id, data: theirs });
+})));
+ipcMain.handle('lan:stop', () => { LAN.stop(); return true; });
+ipcMain.handle('lan:state', () => ({ hosting: LAN.hosting, pin: LAN.pin, ips: LAN.localIps(), port: LAN.PORT }));
+ipcMain.handle('lan:discover', () => LAN.discover(v => { try { win.webContents.send('lan:scan', v); } catch {} }));
+ipcMain.handle('lan:sync', async (e, { host, pin, data }) => {
+  try { return { ok: true, data: await LAN.sync(host, pin, data) }; }
+  catch (err) { return { ok: false, error: String(err.message || err) }; }
 });
 ipcMain.handle('update:restart', () => { app.relaunch(); app.exit(0); });
 // Arayüz sorunsuz açıldı: güncellemenin deneme sayacı sıfırlanır

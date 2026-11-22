@@ -1,6 +1,6 @@
 // Uygulama kabuğu: gezinme, tema, açılışta güncelleme denetimi.
 const App = {
-  version: '1.9.0', short: '1.9', repo: 'departures-mil/comm-calc', current: null,
+  version: '1.10.0', short: '1.10', repo: 'departures-mil/comm-calc', current: null,
   NAV: [['budget', 'Link Bütçesi', '⟿'], ['tools', 'Araçlar', '⚙'], ['tables', 'Tablolar', '▦'], ['antennas', 'Antenler', '⌁'], ['library', 'Kütüphane', '☰'], ['learn', 'Eğitim', '✎'], ['settings', 'Ayarlar', '⛭']],
   async start() {
     if (window.api) { const i = await window.api.info(); this.version = i.version; this.short = i.short; this.repo = i.repo; }
@@ -8,6 +8,7 @@ const App = {
     I18N.set(Store.data.settings.lang);
     this.applyTheme();
     this.renderShell();
+    LanSync.init();
     $('#upd-banner-btn').onclick = () => this.go('settings');
     this.go(localStorage.getItem('cc-view') || 'budget');
     if (window.api) window.api.updateOk();
@@ -29,6 +30,7 @@ const App = {
     $('#upd-banner-btn').textContent = t('Güncelle');
     $('#langs').innerHTML = Object.entries(I18N.LANGS).map(([k, l]) => `<button class="lang${k === I18N.lang ? ' on' : ''}" data-lang="${k}">${l.name}</button>`).join('');
     $$('#langs .lang').forEach(b => b.onclick = () => this.setLang(b.dataset.lang));
+    if (typeof LanSync !== 'undefined') LanSync.titles();
     if (this.current) $$('#nav .nav-i').forEach(b => b.classList.toggle('on', b.dataset.v === this.current));
   },
   setLang(code) {
@@ -47,6 +49,6 @@ const App = {
     Views[view].render(main);
   },
   applyTheme() { document.documentElement.dataset.theme = Store.data.settings.theme || 'dark'; },
-  setUpdateBadge(on) { const d = $('.upd-dot'); if (d) d.hidden = !on; }
+  setUpdateBadge(on) { $$('.upd-dot').forEach(d => d.hidden = !on); }
 };
 window.addEventListener('DOMContentLoaded', () => App.start().catch(e => { document.body.innerHTML = '<pre style="padding:20px;color:#e5484d">Error: ' + esc(e.stack || e) + '</pre>'; }));

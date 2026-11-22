@@ -13,7 +13,7 @@
         android:allowBackup="true"
         android:hardwareAccelerated="true"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="false">
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
