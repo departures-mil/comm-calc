@@ -2,7 +2,7 @@
   "name": "comm-calc",
   "productName": "Comm Calc",
   "version": "1.8.0",
-  "ccShell": 1,
+  "ccShell": 2,
   "description": "İHA alıcı/verici link bütçesi hesaplayıcı",
   "main": "main.js",
   "author": "Milen",
