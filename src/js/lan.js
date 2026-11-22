@@ -94,8 +94,15 @@ const LanSync = (() => {
     box.innerHTML = `<span id="top-prog" class="muted small" hidden></span>
       <button class="icon-btn top-btn" id="top-upd"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><i class="upd-dot" hidden></i></button>
       <button class="icon-btn top-btn" id="top-sync"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg></button>`;
+    if (window.api && window.api.minimize) {
+      box.insertAdjacentHTML('beforeend', '<button class="icon-btn top-btn" id="top-min">—</button><button class="icon-btn top-btn" id="top-quit">✕</button>');
+    }
     h.appendChild(box);
     titles();
+    if ($('#top-min')) {
+      $('#top-min').onclick = () => window.api.minimize();
+      $('#top-quit').onclick = async () => { if (await confirmBox(t('Programdan çıkılsın mı?'))) { await Store.flush(); window.api.quit(); } };
+    }
     $('#top-upd').onclick = async () => {
       const b = $('#top-upd'); b.classList.add('busy');
       try {
@@ -111,6 +118,9 @@ const LanSync = (() => {
     const u = $('#top-upd'), s = $('#top-sync');
     if (u) { u.title = t('Güncelle'); u.setAttribute('aria-label', u.title); }
     if (s) { s.title = t('Eşitle'); s.setAttribute('aria-label', s.title); }
+    const mi = $('#top-min'), q = $('#top-quit');
+    if (mi) { mi.title = t('Küçült'); mi.setAttribute('aria-label', mi.title); }
+    if (q) { q.title = t('Kapat'); q.setAttribute('aria-label', q.title); }
   }
 
   function dialog() {

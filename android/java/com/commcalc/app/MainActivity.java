@@ -66,9 +66,9 @@ public class MainActivity extends Activity {
     // Bu APK'nın içindeki arayüz sürümü; uygulama içinden kurulan güncelleme daha yeniyse o kullanılır
     static final String BUILTIN = "1.4.0";
     // Kabuk sürümü: güncelleme paketindeki minShell bundan büyükse yeni APK gerekir
-    static final int SHELL = 1;
+    static final int SHELL = 2;
     // Güncelleme paketlerini doğrulayan açık anahtar (lib/update-key.js ile aynı, ECDSA P-256)
-    static final String UPD_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsn357csU5kTr0ICBzh35WD25JNXMZlYU6WAAuXmyPJFb3nKvG90K5N2rRIiE1ZdZyW0S3eQI/+2zu4TGsl6vxw==";
+    static final String UPD_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/cyAZQDotqgBl7hIh+GeI+eKp2n1RB7yEziwbbdqXZyWJZ+vlvvfnBMaZIzhIoIQTsV8hk4eGd7WpUVqyhIjcw==";
     static File ota;
     static String otaVer;
     static boolean otaPicked;
@@ -470,5 +470,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void exit() { ui.post(new Runnable() { public void run() { moveTaskToBack(true); } }); }
+        @JavascriptInterface
+        public void quit() { ui.post(new Runnable() { public void run() { if (Build.VERSION.SDK_INT >= 21) finishAndRemoveTask(); else finish(); } }); }
     }
 }

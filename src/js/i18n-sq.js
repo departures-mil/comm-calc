@@ -847,3 +847,8 @@ I18N.fromEnglish('sq', {
   "(other device)": "(pajisja tjetër)",
   "This is not Comm Calc data": "Këto nuk janë të dhëna Comm Calc",
 });
+
+I18N.fromEnglish('sq', {
+  "Minimize": "Minimizo",
+  "Exit the program?": "Të dilet nga programi?",
+});

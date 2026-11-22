@@ -604,4 +604,6 @@ I18N.rows([
   ["Cihaza ulaşılamadı. İkisi de aynı Wi‑Fi'de mi, öbür cihazda \"Bekle\" açık mı?", "Could not reach the device. Are both on the same Wi‑Fi and is \"Wait\" on?", "تعذّر الوصول إلى الجهاز. هل كلاهما على نفس Wi‑Fi وهل \"انتظار\" مفعّل؟"],
   ["(diğer cihaz)", "(other device)", "(الجهاز الآخر)"],
   ["Bu veri Comm Calc verisi değil", "This is not Comm Calc data", "هذه ليست بيانات Comm Calc"],
+  ["Küçült", "Minimize", "تصغير"],
+  ["Programdan çıkılsın mı?", "Exit the program?", "هل تريد الخروج من البرنامج؟"],
 ]);

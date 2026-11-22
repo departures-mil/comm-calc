@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.commcalc.app"
+    package="com.departures.commcalc"
     android:versionCode="10400"
     android:versionName="1.4">
     <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".MainActivity"
+            android:name="com.commcalc.app.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize"
@@ -26,8 +26,8 @@
             </intent-filter>
         </activity>
         <provider
-            android:name=".Files"
-            android:authorities="com.commcalc.app.files"
+            android:name="com.commcalc.app.Files"
+            android:authorities="com.departures.commcalc.files"
             android:exported="false"
             android:grantUriPermissions="true" />
     </application>

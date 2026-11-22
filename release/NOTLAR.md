@@ -1,9 +1,8 @@
-## Comm Calc v1.10
+## Comm Calc v1.11
 
-- Sağ üstte Güncelle ve Eşitle düğmeleri
-- Güncelleme inerken yüzde, MB (inen/toplam/kalan) ve indirme hızı
-- Wi-Fi ile internetsiz eşitleme (aynı modem; iki yönlü, kayıp yok)
-- Program her açılışta tam ekran
-- (v1.9) Admin duyuruları, Kullanım Limitleri, ürün tanıma yalnız kendi anahtarınızla
+- Telefon uygulaması yenilendi (yeni imza, eskisinin yanına kurulur): bilgisayarla Wi-Fi üzerinden internetsiz eşitleme, sağ üstte Küçült ve Kapat.
+- **Eski sürümü (v1.8 ve öncesi) kullanan bilgisayarlar için bir kerelik yeni program:** https://github.com/departures-mil/comm-calc/raw/main/kurulum/Comm-Calc-v1.10-Tasinabilir.exe — indirip açın; sonraki sürümler yine programın içinden tek tıkla gelir.
 
 **Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).
+
+**Android:** `Comm-Calc-v1.11.apk` dosyasını telefona indirip kurun. Kurulu uygulama sonraki sürümleri kendi içinden günceller.
