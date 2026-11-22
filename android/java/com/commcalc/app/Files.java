@@ -18,7 +18,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 public class Files extends ContentProvider {
-    static final String AUTH = "com.commcalc.app.files";
+    static final String AUTH = "com.departures.commcalc.files";
 
     static File root(Context c, String k) {
         if ("c".equals(k)) return c.getCacheDir();

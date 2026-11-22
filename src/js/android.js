@@ -27,7 +27,9 @@
     checkUpdate: () => later(id => B.checkUpdate(id)),
     installUpdate: () => later(id => B.installUpdate(id)),
     restart: async () => B.restart(),
-    updateOk: async () => B.updateOk()
+    updateOk: async () => B.updateOk(),
+    minimize: async () => B.exit(),
+    quit: async () => (B.quit ? B.quit() : B.exit())
   };
   // Geri tuşu: açık pencere kapanır, sonra Link Bütçesi'ne dönülür
   window.__onBack = () => {
