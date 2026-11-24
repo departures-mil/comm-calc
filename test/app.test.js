@@ -25,7 +25,7 @@ test('tek semver sürüm (etiket vX.Y.Z, kısaltma yok): package.json = surum.js
 });
 
 test('gömülü ortak çekirdek: sürüm kaydı, modüller, kurulum kanalı düzeltmesi', () => {
-  for (const f of ['cekirdek/VERSION', 'src/cekirdek/VERSION']) assert.match(R(f), /^ortak-cekirdek 87f42f8[0-9a-f]{33}\n/);
+  for (const f of ['cekirdek/VERSION', 'src/cekirdek/VERSION']) assert.match(R(f), /^ortak-cekirdek ebec004[0-9a-f]{33}\n/);
   delete globalThis.FC;
   require('../src/cekirdek/fc-core.js');
   const FC = globalThis.FC;

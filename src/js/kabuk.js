@@ -1,4 +1,4 @@
-/* Comm Calc — ortak çekirdek kabuğu (src/cekirdek/fc-core.js, ortak-cekirdek 87f42f8).
+/* Comm Calc — ortak çekirdek kabuğu (src/cekirdek/fc-core.js, ortak-cekirdek ebec004).
    Burada: sağ üst sıra (Duyurular · Eşitle · Wi‑Fi · Güncelle · Tema · Dil | Küçült · Orta · Tam ekran · Kapat), menü simgeleri,
    "klasik" renk şeması (v1.11'in renkleri), dört dil köprüsü (çekirdek tr/en/ar; Arnavutça uygulamada kalır, çekirdek metinleri
    sq sözlüğüyle gösterilir), ayarlar düzeni (Admin ile iletişim EN SON, Hakkında ondan önce), Kullanım Limitleri, ilk açılış

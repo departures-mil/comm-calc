@@ -78,8 +78,9 @@ function cleanup(o, delayMs) {
   }, delayMs == null ? 60000 : delayMs);
 }
 
+/* ---------- pencere ---------- */
 /* ---------- kurulum kanalı (win-setup) ----------
-   [comm-calc düzeltmesi, çekirdek 87f42f8'de yok] updater.plan minVersion/setupChannel ile 'win-setup' kanalını seçtiğinde
+   updater.plan minVersion/setupChannel ile 'win-setup' kanalını seçtiğinde
    installFull kurulum exe'sini getirir; çekirdek bunu app.asar.next olarak yazıp takas ediyordu (program bozulurdu).
    Burada exe SHA-256 ile doğrulanır, geçici klasöre yazılır, ayrık süreç olarak açılır ve program kapanır. */
 function isSetup(meta) { return !!(meta && (/setup/i.test(String(meta.channel || '')) || /\.exe$/i.test(String(meta.file || '')))); }
@@ -97,7 +98,6 @@ function runSetup(buf, meta) {
   return 'restarting';
 }
 
-/* ---------- pencere ---------- */
 function install(win, opts) {
   const o = Object.assign({ channel: 'win-app' }, opts || {});
   const applyDelta = o.applyDelta || applyFcd1;
@@ -136,7 +136,7 @@ function install(win, opts) {
     swapAndRelaunch(o, st); return 'restarting';
   }));
   handle('fc:update:full', result((_e, bytes, meta) => {
-    // [comm-calc düzeltmesi] Kurulum kanalı (win-setup: NSIS exe) app.asar'ın yerine YAZILMAZ; doğrulanıp çalıştırılır.
+    // Kurulum kanalı (win-setup: NSIS exe) app.asar'ın yerine YAZILMAZ; doğrulanıp çalıştırılır.
     if (isSetup(meta)) return runSetup(Buffer.from(bytes), meta);
     const st = stage(o, Buffer.from(bytes), meta); swapAndRelaunch(o, st); return 'restarting';
   }));
