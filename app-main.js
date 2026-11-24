@@ -1,6 +1,6 @@
 // Comm Calc masaüstü ana süreci: pencere, veri dosyası, dosya içe/dışa aktarma ve uygulama içi güncelleme.
 const { app, BrowserWindow, ipcMain, dialog, shell, net, Menu } = require('electron');
-try { require('./fc-agent-main.js').install(); } catch (e) { console.error('fc-agent', e); }
+try { require('./lib/fc-agent-main.js').install(); } catch (e) { console.error('fc-agent', e); }
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
