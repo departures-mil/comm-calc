@@ -1,5 +1,5 @@
-## Comm Calc v1.12.1
+## Comm Calc v1.12.2
 
-Asistan Agent: bilgisayardaki diğer programlarla ortak çalışma kaydı düzeltildi.
+Asistan Agent iyileştirildi: yapay zeka önerileri programda seçili Gemini modeliyle, ayarlar kartı yerleşimi düzeltildi.
 
 **Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).

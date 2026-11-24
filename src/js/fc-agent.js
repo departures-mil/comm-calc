@@ -546,9 +546,9 @@ if (typeof FC === "undefined" || !FC.topbar) {
     var a = aiCfg(), f = run.fetch || g.fetch, k = a && a.key, u, h = { 'Content-Type': 'application/json' }, body, pick;
     if (!a || !f) return Promise.reject(new Error('NO_AI'));
     var p = prompt(sm), M = run.models || {};
-    if (a.provider === 'gemini') { u = 'https://generativelanguage.googleapis.com/v1beta/models/' + (M.gemini || 'gemini-2.5-flash') + ':generateContent?key=' + encodeURIComponent(k); body = { contents: [{ parts: [{ text: p }] }] }; pick = function (j) { return j.candidates[0].content.parts[0].text; }; }
-    else if (a.provider === 'anthropic') { u = 'https://api.anthropic.com/v1/messages'; h['x-api-key'] = k; h['anthropic-version'] = '2023-06-01'; h['anthropic-dangerous-direct-browser-access'] = 'true'; body = { model: M.anthropic || 'claude-haiku-5-5', max_tokens: 700, messages: [{ role: 'user', content: p }] }; pick = function (j) { return j.content[0].text; }; }
-    else { u = a.provider === 'groq' ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions'; h.Authorization = 'Bearer ' + k; body = { model: a.provider === 'groq' ? (M.groq || 'llama-3.3-70b-versatile') : (M.openai || 'gpt-4o-mini'), messages: [{ role: 'user', content: p }] }; pick = function (j) { return j.choices[0].message.content; }; }
+    if (a.provider === 'gemini') { u = 'https://generativelanguage.googleapis.com/v1beta/models/' + (a.model || M.gemini || 'gemini-flash-latest') + ':generateContent?key=' + encodeURIComponent(k); body = { contents: [{ parts: [{ text: p }] }] }; pick = function (j) { return j.candidates[0].content.parts[0].text; }; }
+    else if (a.provider === 'anthropic') { u = 'https://api.anthropic.com/v1/messages'; h['x-api-key'] = k; h['anthropic-version'] = '2023-06-01'; h['anthropic-dangerous-direct-browser-access'] = 'true'; body = { model: a.model || M.anthropic || 'claude-haiku-5-5', max_tokens: 700, messages: [{ role: 'user', content: p }] }; pick = function (j) { return j.content[0].text; }; }
+    else { u = a.provider === 'groq' ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions'; h.Authorization = 'Bearer ' + k; body = { model: a.model || (a.provider === 'groq' ? (M.groq || 'llama-3.3-70b-versatile') : (M.openai || 'gpt-4o-mini')), messages: [{ role: 'user', content: p }] }; pick = function (j) { return j.choices[0].message.content; }; }
     S().set('agent.ai', { d: dayKey(), n: aiCallsToday() + 1 });
     if (FC.usage) FC.usage.count('ai.' + a.provider);
     return f(u, { method: 'POST', headers: h, body: JSON.stringify(body) }).then(function (r) {
@@ -889,10 +889,16 @@ if (typeof FC === "undefined" || !FC.topbar) {
     if (o.button !== false) {
       var b = FC.agent.button();
       if (o.button && o.button.nodeType) { shadowHost(o.button, false).appendChild(b); b.classList.add('fc-agent-inline'); }
-      else { b.classList.add('fc-agent-fab'); main.appendChild(b); }
+      else {
+        b.classList.add('fc-agent-fab'); main.appendChild(b);
+        var f = o.fab || {};   // {bottom: 90, side: 'start'|'end'} — uygulamanın kendi yüzen düğmesiyle çakışmasın
+        if (f.bottom != null) b.style.bottom = (+f.bottom) + 'px';
+        if (f.side === 'start') { b.style.insetInlineEnd = 'auto'; b.style.insetInlineStart = '18px'; }
+      }
     }
     if (o.settings) settings(o.settings);
     if (o.settingsBefore) watchSettings(o.settingsBefore, o.cardSelector);
+    if (o.menuBefore) watchMenu(o.menuBefore);
     sync();
     st.timer = setInterval(sync, 1500);
     return api;
@@ -931,7 +937,34 @@ if (typeof FC === "undefined" || !FC.topbar) {
     mo.observe(g.document.body, { childList: true, subtree: true });
     place();
   }
-  var api = { mount: mount, watchSettings: watchSettings, settings: settings, refresh: sync, agent: function () { return FC.agent; }, track: function (n, k) { FC.agent.track(n, k); }, task: function (a, b, c) { FC.agent.task(a, b, c); }, show: function () { return FC.agent.show(); },
+  /** Ayarlar bir menü listesiyse (kart yok): metni verilen düğmenin önüne aynı görünümde "✦ Asistan Agent" düğmesi koyar;
+      tıklanınca ayarlar kartı pencerede açılır. */
+  function openCard() { var body = FC.ui.el('div'); body.appendChild(FC.agent.card()); return FC.ui.modal({ title: FC.t('fc.agent.title'), icon: 'sparkles', body: body, buttons: [{ label: FC.t('fc.close'), cls: 'primary' }] }); }
+  function watchMenu(texts) {
+    var list = (Array.isArray(texts) ? texts : [texts]).map(function (t) { return String(t).trim(); }).filter(Boolean), pend = 0;
+    function place() {
+      pend = 0;
+      var w = g.document.createTreeWalker(g.document.body, 4, null), n, target = null;
+      while (!target && (n = w.nextNode())) {
+        var t = (n.nodeValue || '').trim(); if (!t || t.length > 80) continue;
+        for (var i = 0; i < list.length; i++) { var at = t.indexOf(list[i]); if (at >= 0 && at <= 4 && t.length <= list[i].length + 6) { var e = n.parentNode; target = e && e.closest ? (e.closest('button,a,li,[role=button],[role=menuitem]') || e) : null; break; } }
+      }
+      if (!target || !target.parentNode) return;
+      var prev = target.previousElementSibling;
+      if (prev && prev.hasAttribute && prev.hasAttribute('data-fc-agent-menu')) { prev.textContent = '✦ ' + FC.t('fc.agent.title'); return; }
+      var b = g.document.createElement(target.tagName === 'A' ? 'button' : target.tagName);
+      b.className = target.className; b.setAttribute('data-fc-agent-menu', ''); b.setAttribute('data-fc-agent', ''); if (b.tagName === 'BUTTON') b.type = 'button';
+      b.textContent = '✦ ' + FC.t('fc.agent.title');
+      b.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); openCard(); });
+      target.parentNode.insertBefore(b, target);
+    }
+    var mo = new g.MutationObserver(function (recs) {
+      for (var i = 0; i < recs.length; i++) { var t = recs[i].target; if (t && t.closest && t.closest('[data-fc-agent]')) continue; if (!pend) pend = setTimeout(place, 250); return; }
+    });
+    mo.observe(g.document.body, { childList: true, subtree: true, characterData: true });
+    place(); FC.i18n.onChange(function () { setTimeout(place, 50); });
+  }
+  var api = { mount: mount, watchSettings: watchSettings, watchMenu: watchMenu, openSettings: openCard, settings: settings, refresh: sync, agent: function () { return FC.agent; }, track: function (n, k) { FC.agent.track(n, k); }, task: function (a, b, c) { FC.agent.task(a, b, c); }, show: function () { return FC.agent.show(); },
     exportShare: function () { return FC.agent.exportShare(); }, importShare: function (x) { return FC.agent.importShare(x); } };
   g.FCAgent = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
