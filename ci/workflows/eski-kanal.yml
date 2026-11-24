@@ -1,0 +1,32 @@
+# Eski kanal köprüsü: geliştiricinin bilgisayarında `node tools/eski-kanal.mjs` imzalı release/guncelleme.zip + guncelleme.json'u
+# main'e gönderince ikisini v<sürüm> release'ine ekler. ccShell 1–2 taşınabilir exe'ler ve SHELL 2 Android APK'ları
+# releases/latest'te bu iki dosyayı arar (ECDSA imzası programda doğrulanır; özel anahtar CI'da YOKTUR).
+# Bu dosya yalnızca GitHub MCP create_or_update_file ile değiştirilebilir.
+name: eski-kanal
+on:
+  push:
+    branches: [main]
+    paths: ['release/guncelleme.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: guncelleme.zip/json → release
+        shell: bash
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          set -euo pipefail
+          [ -f release/guncelleme.json ] || { echo "release/guncelleme.json yok"; exit 0; }
+          v="$(node -p "require('./release/guncelleme.json').version")"
+          p="$(node -p "require('./package.json').version")"
+          if [ "$v" != "$p" ]; then echo "::notice::guncelleme.json $v ≠ package.json $p — eski paket, yüklenmedi"; exit 0; fi
+          node -e "const c=require('crypto'),f=require('fs');const j=require('./release/guncelleme.json');const z=f.readFileSync('release/guncelleme.zip');const h=c.createHash('sha256').update(z).digest('hex');if(h!==j.sha256)throw new Error('sha');if(!c.verify('sha256',Buffer.from('CC-GUNCELLEME\n'+j.version+'\n'+h),{key:require('./lib/update-key.js'),dsaEncoding:'der'},Buffer.from(j.sig,'base64')))throw new Error('imza');console.log('imza doğrulandı',j.version)"
+          gh release view "v$v" >/dev/null 2>&1 || { echo "::error::v$v release'i yok; önce release.yml"; exit 1; }
+          gh release upload "v$v" release/guncelleme.zip release/guncelleme.json --clobber
+          echo "::notice::v$v: eski kanal köprüsü yüklendi"

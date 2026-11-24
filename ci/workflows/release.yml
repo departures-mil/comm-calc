@@ -1,0 +1,82 @@
+# Comm Calc — test → Windows derlemesi (NSIS kurulum + app.asar) → GitHub Release (ortak çekirdek, delta yamalar, latest.json).
+# Yayın: node tools/surum.js X.Y.Z (önce src/js/news.js NEWS'e kayıt), main'e birleştir, sonra
+#   Actions → release → "Run workflow" (main)  ya da  gh api -X POST repos/departures-mil/comm-calc/actions/workflows/release.yml/dispatches -f ref=main
+# Etiket vX.Y.Z (tam sürüm) release ile birlikte oluşturulur. Entegrasyon dallarında (ortak-cekirdek-*) yalnız test + derleme çalışır.
+# Eski kanal köprüsü (imzalı guncelleme.zip, ccShell 1–2 / eski APK) release'ten SONRA eski-kanal.yml ile eklenir.
+# Bu dosya yalnızca GitHub MCP create_or_update_file ile değiştirilebilir (git ile workflow gönderimi engelli).
+name: release
+on:
+  push:
+    tags: ['v*']
+    branches: ['ortak-cekirdek-*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Electron için sistem kitaplıkları
+        run: sudo apt-get update -q && sudo apt-get install -y -q xvfb libnss3 libgbm1 libasound2t64 libgtk-3-0 >/dev/null || sudo apt-get install -y -q xvfb libnss3 libgbm1 libgtk-3-0
+      - name: npm test (node duman testi + Electron açılış testi, xvfb)
+        run: npm test
+      - name: Etiket = package.json sürümü
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "::error::etiket ${GITHUB_REF_NAME} ≠ package.json v$v"; exit 1; }
+
+  build:
+    needs: test
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - id: ver
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: NSIS kurulum + app.asar
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Yayınlanacak dosyaları topla
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir release-out
+          cp dist/win-unpacked/resources/app.asar release-out/app.asar
+          cp dist/*Setup*.exe release-out/
+          ls -la release-out
+          sha256sum release-out/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-win
+          path: release-out/
+          retention-days: 5
+
+  release:
+    needs: [test, build]
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    permissions:
+      contents: write
+    uses: departures-mil/ortak-cekirdek/.github/workflows/reusable-release.yml@main
+    with:
+      app_id: comm-calc
+      version: ${{ needs.build.outputs.version }}
+      file_prefix: CommCalc
+      release_title: Comm Calc v${{ needs.build.outputs.version }}
+      files: |
+        win-app=app.asar
+        win-setup=*Setup*.exe
+      notes_json: release-notes.json
+      core_ref: main
