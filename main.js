@@ -1,38 +1,11 @@
-// Başlatıcı (kabuk): uygulama içinden indirilmiş bir güncelleme varsa onu, yoksa programla gelen sürümü çalıştırır.
-// Güncellemeler %APPDATA%\Comm Calc\guncelleme\<sürüm> klasöründe durur; kayıtlı projeler ve kütüphane etkilenmez.
-// Bu dosya güncellemeyle değişmez; bu yüzden küçük ve hatasız tutulur.
+// Başlatıcı (kabuk 3, v1.12.0+ NSIS kurulumu): programla gelen app-main.js'i çalıştırır.
+// Güncellemeler artık ortak çekirdekle gelir (GitHub Releases latest.json → app.asar yama/tam dosya takası), bu yüzden
+// eski %APPDATA%\Comm Calc\guncelleme\<sürüm> klasörü (ccShell 1–2'nin uygulama içi paketleri) BURADA KULLANILMAZ.
+// Eski taşınabilir exe'ler (ccShell 1–2) kendi main.js'leriyle aynı app-main.js'i o klasörden yükler; app-main.js
+// bunu global.__ccShell.shell < 3 ile anlar ve kullanıcıyı yeni kurulum dosyasına yönlendirir (köprü).
 const { app } = require('electron');
-const path = require('path');
-const fs = require('fs');
-
 app.setName('Comm Calc');
 const BUILTIN = require('./package.json');
 const code = v => { const p = String(v || '0').split('.').map(n => parseInt(n, 10) || 0); return p[0] * 10000 + (p[1] || 0) * 100 + (p[2] || 0); };
-const UPD = path.join(app.getPath('appData'), 'Comm Calc', 'guncelleme');
-const ACTIVE = path.join(UPD, 'aktif.json');
-global.__ccShell = { dir: __dirname, version: BUILTIN.version, shell: BUILTIN.ccShell || 1, updDir: UPD, code };
-
-function pick() {
-  let a;
-  try { a = JSON.parse(fs.readFileSync(ACTIVE, 'utf8')); } catch { return null; }
-  const dir = path.join(UPD, String(a.dir || ''));
-  if (!(code(a.version) > code(BUILTIN.version)) || !fs.existsSync(path.join(dir, 'app-main.js'))) return null;
-  // Üst üste iki açılışta arayüz yüklenemediyse güncelleme bırakılır, programla gelen sürüme dönülür
-  if ((a.tries || 0) >= 2) { try { fs.renameSync(ACTIVE, ACTIVE + '.bozuk'); } catch {} return null; }
-  a.tries = (a.tries || 0) + 1;
-  try { fs.writeFileSync(ACTIVE, JSON.stringify(a)); } catch {}
-  return dir;
-}
-
-const dir = pick();
-let loaded = false;
-if (dir) {
-  process.env.NODE_PATH = path.join(__dirname, 'node_modules');
-  require('module').Module._initPaths();
-  try { require(path.join(dir, 'app-main.js')); loaded = true; }
-  catch (e) {
-    try { fs.renameSync(ACTIVE, ACTIVE + '.bozuk'); } catch {}
-    app.relaunch(); app.exit(0); loaded = true;
-  }
-}
-if (!loaded) require('./app-main.js');
+global.__ccShell = { dir: __dirname, version: BUILTIN.version, shell: BUILTIN.ccShell || 3, updDir: null, code };
+require('./app-main.js');

@@ -1,26 +1,32 @@
 <!doctype html>
-<html lang="tr" data-theme="dark">
+<html lang="tr" dir="ltr" data-scheme="falcon">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src https:;">
-<title>Comm Calc v1.11</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src https:;">
+<title>Comm Calc v1.12.0</title>
+<script src="js/onceden.js"></script>
+<link rel="stylesheet" href="cekirdek/css/tokens.css">
+<link rel="stylesheet" href="cekirdek/css/core.css">
 <link rel="stylesheet" href="styles.css">
+<script src="cekirdek/fc-core.js"></script>
+<script src="js/surum.js"></script>
 </head>
 <body>
-<aside class="side">
-  <div class="brand"><img src="../assets/logo.svg" alt="" class="logo"><div><b>Comm Calc</b><span id="ver" class="ver">v1.11</span></div></div>
-  <nav id="nav"></nav>
-  <div id="langs" class="langs"></div>
-  <div id="side-f" class="side-f muted xsmall"></div>
-</aside>
-<main class="main">
-  <header class="top"><h1 id="title"></h1>
-    <div id="upd-banner" class="upd-banner" hidden><span id="upd-banner-t"></span> <b id="upd-banner-v"></b> <button class="btn xs primary" id="upd-banner-btn"></button></div>
-  </header>
-  <div id="view" class="view"></div>
-</main>
-<div id="toasts" class="toasts" aria-live="polite"></div>
+<div id="appShell" class="shell">
+  <aside class="sidebar side">
+    <div class="brand"><img src="../assets/logo.svg" alt="" class="logo"><div class="brand-text"><div class="brand-name">Comm Calc</div><div class="brand-tag" id="side-f"></div></div><span id="ver" class="version-badge"></span></div>
+    <nav id="nav" class="nav"></nav>
+  </aside>
+  <div class="main">
+    <header class="topbar top" id="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Menü"></button>
+      <div class="topbar-title"><h1 class="page-title" id="title"></h1></div>
+    </header>
+    <div id="view" class="view content"></div>
+  </div>
+  <div class="drawer-backdrop" id="drawerBack"></div>
+</div>
 <script src="vendor/firebase-ai.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/android.js"></script>
@@ -39,12 +45,10 @@
 <script src="js/antennas.js"></script>
 <script src="js/library.js"></script>
 <script src="js/learn.js"></script>
-<script src="js/settings.js"></script>
 <script src="js/news.js"></script>
-<script src="js/duyuru.js"></script>
-<script src="js/kullanim.js"></script>
-<script src="js/indirme-ilerleme.js"></script>
+<script src="js/settings.js"></script>
 <script src="js/lan.js"></script>
+<script src="js/kabuk.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

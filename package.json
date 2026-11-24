@@ -1,8 +1,8 @@
 {
   "name": "comm-calc",
   "productName": "Comm Calc",
-  "version": "1.11.0",
-  "ccShell": 2,
+  "version": "1.12.0",
+  "ccShell": 3,
   "description": "İHA alıcı/verici link bütçesi hesaplayıcı",
   "main": "main.js",
   "author": "departures-mil",
@@ -11,32 +11,68 @@
   "scripts": {
     "start": "electron .",
     "build:web": "node web/build.mjs",
-    "dist:win": "node web/build.mjs && electron-builder --win portable --x64"
+    "surum": "node tools/surum.js",
+    "test": "node web/build.mjs && node --test test/app.test.js test/electron-smoke.test.js",
+    "test:electron": "node --test test/electron-smoke.test.js",
+    "dist": "node web/build.mjs && electron-builder --win nsis --x64 --publish never",
+    "eski-kanal": "node tools/eski-kanal.mjs"
   },
   "build": {
     "appId": "com.departuresmil.commcalc",
     "productName": "Comm Calc",
     "copyright": "departures-mil",
-    "directories": { "output": "dist" },
-    "files": ["main.js", "app-main.js", "preload.js", "lib/**", "src/**", "assets/**", "package.json"],
-    "win": {
-      "icon": "assets/icon.ico",
-      "signAndEditExecutable": false
+    "directories": {
+      "output": "dist"
     },
-    "portable": { "artifactName": "Comm-Calc-v${env.CC_VER}-Tasinabilir.${ext}" },
-    "afterPack": "tools/after-pack.cjs"
-  },
-  "dependencies": {
-    "jszip": "^3.10.1"
+    "files": [
+      "main.js",
+      "app-main.js",
+      "preload.js",
+      "package.json",
+      "cekirdek/**/*",
+      "lib/**/*",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Comm Calc",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "multiLanguageInstaller": true,
+      "installerLanguages": [
+        "tr_TR",
+        "en_US",
+        "ar_SA"
+      ],
+      "language": "1055",
+      "artifactName": "CommCalc-Setup-${version}.${ext}"
+    }
   },
   "devDependencies": {
     "electron": "^45.2.1",
     "electron-builder": "^26.18.0",
     "esbuild": "^0.25.0",
     "firebase": "^13.1.0",
-    "pe-library": "^1.0.1",
-    "resedit": "^2.0.3",
-    "sharp": "^0.34.0",
-    "png-to-ico": "^2.1.8"
+    "jszip": "^3.10.1"
   }
 }

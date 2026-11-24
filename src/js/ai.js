@@ -51,9 +51,6 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     return o;
   }
 
-  // Programla gelen Firebase projesi (web yapılandırması herkese açık olacak şekilde tasarlanmıştır)
-  const BUILTIN = { apiKey: 'AIzaSyB12RFS6ENPpmnnPsETfjedNH-3hmNWQvA', authDomain: 'comm-calc-103111111.firebaseapp.com', projectId: 'comm-calc-103111111',
-    storageBucket: 'comm-calc-103111111.firebasestorage.app', messagingSenderId: '16916427114', appId: '1:16916427114:web:789decedfd76923200b513' };
   const MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
   // ---- Yapılandırma: kullanıcının yapıştırdığı firebaseConfig bloğunu esnek biçimde okur; yoksa programla gelen proje
   function firebaseConfig() {
@@ -69,6 +66,7 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     return o.apiKey && o.projectId ? o : null;
   }
   const available = () => true;
+  const countAi = () => { try { if (window.FC && FC.usage) FC.usage.count('ai.gemini'); } catch {} };
   const extractJson = t => { const m = String(t).match(/\{[\s\S]*\}/); if (!m) throw new Error(t('Yanıtta JSON yok')); return JSON.parse(m[0]); };
 
   // Yoğunluk veya kullanımdan kalkmış model hatasında sıradaki modelle tekrar denenir
@@ -91,7 +89,8 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     const key = (s.geminiKey || '').trim();
     // Kullanıcı kendi Gemini anahtarını girdiyse o, yoksa Firebase AI Logic kullanılır
     const cfg = key ? null : firebaseConfig();
-    if (cfg && window.CCFirebase) return window.CCFirebase.generate(cfg, model, parts);
+    // Kullanım Limitleri kartı (ortak çekirdek): kullanıcının KENDİ Gemini / Firebase AI Logic çağrıları sayılır
+    if (cfg && window.CCFirebase) { const out = await window.CCFirebase.generate(cfg, model, parts); countAi(); return out; }
     if (!key && !cfg) throw new Error(t('Kendi Gemini API anahtarınızı ya da kendi Firebase projenizi Ayarlar → Çevrimiçi ürün tanıma bölümüne girin.'));
     if (!key) throw new Error(t('Çevrimiçi tanıma modülü yüklenemedi.'));
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
@@ -100,6 +99,7 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error((j.error && j.error.message) || 'HTTP ' + r.status);
+    countAi();
     return ((j.candidates || [])[0] || {}).content.parts.map(p => p.text || '').join('');
   }
   // images: dataURL dizisi; text: teknik metin; query: ürün adı
@@ -113,5 +113,5 @@ Not: "5.8G" 5725–5875 MHz civarı, "2.4G" 2400–2483 MHz demektir; açık ara
     for (const k of Object.keys(out)) if (out[k] === null || out[k] === '') delete out[k];
     return out;
   }
-  return { parseText, recognize, available, firebaseConfig, ANT_TYPES, BUILTIN };
+  return { parseText, recognize, available, firebaseConfig, ANT_TYPES };
 })();

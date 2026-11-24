@@ -1,50 +1,99 @@
-// Comm Calc masaüstü ana süreci: pencere, veri dosyası, dosya içe/dışa aktarma ve uygulama içi güncelleme.
-const { app, BrowserWindow, ipcMain, dialog, shell, net, Menu } = require('electron');
+// Comm Calc masaüstü ana süreci: pencere (ortak çekirdek: tam ekran, sağ üst pencere düğmeleri, GitHub Releases güncellemesi,
+// ana süreç hata raporu), veri dosyası, dosya içe/dışa aktarma ve Wi-Fi (LAN) eşitleme taşıyıcısı.
+//
+// İki kabukta çalışır:
+//  - Yeni kabuk (main.js, ccShell 3, NSIS kurulumu): güncelleme kanalı 'win-app' (app.asar yama / tam dosya), kurulum kanalı 'win-setup'.
+//  - Eski kabuk (taşınabilir exe, ccShell 1–2): eski main.js bu dosyayı %APPDATA%\Comm Calc\guncelleme\v<sürüm>\ altından yükler
+//    (eski imzalı guncelleme.zip köprüsü). Orada app.asar geçicidir, bu yüzden kanal 'win-setup': "Güncelle" yeni kurulum
+//    programını indirir, SHA-256 ile doğrular ve çalıştırır. Veriler (%APPDATA%\Comm Calc\veri.json) iki kabukta da aynıdır.
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const JSZip = require('jszip');
+const fc = require('./cekirdek/electron/fc-electron-main');
 
 const PKG = require('./package.json');
 const SHELL = global.__ccShell || {
-  dir: __dirname, version: PKG.version, shell: PKG.ccShell || 1,
-  updDir: path.join(app.getPath('appData'), 'Comm Calc', 'guncelleme'),
+  dir: __dirname, version: PKG.version, shell: PKG.ccShell || 3, updDir: null,
   code: v => { const p = String(v || '0').split('.').map(n => parseInt(n, 10) || 0); return p[0] * 10000 + (p[1] || 0) * 100 + (p[2] || 0); }
 };
+const LEGACY = (SHELL.shell || 1) < 3;              // eski taşınabilir exe içinde mi?
 const USER = path.join(app.getPath('appData'), 'Comm Calc');
 const DATA = path.join(USER, 'veri.json');
 const REPO = 'departures-mil/comm-calc';
+const SMOKE = !!process.env.CC_SMOKE;
 fs.mkdirSync(USER, { recursive: true });
+
+// Tek kopya: ikinci açılış mevcut pencereyi öne getirir (iki pencere aynı veri dosyasına yazmasın)
+const gotLock = SMOKE || app.requestSingleInstanceLock();
+if (!gotLock) app.quit();
+else app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
 
 let win;
 function createWindow() {
   Menu.setApplicationMenu(null);
-  win = new BrowserWindow({
-    width: 1360, height: 860, minWidth: 980, minHeight: 640, backgroundColor: '#0d1520',
-    title: 'Comm Calc v' + shortVer(PKG.version),
+  win = new BrowserWindow(fc.windowOptions({
+    minWidth: 980, minHeight: 640, backgroundColor: '#070b14',
+    title: 'Comm Calc v' + PKG.version,
     icon: path.join(__dirname, 'assets', 'icon.png'),
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
-  });
-  win.maximize();   // her açılışta tam ekran (pencere düğmeleri yerinde)
+    // sandbox:false → preload ortak çekirdeğin fc-preload.js'ini require edebilir (contextIsolation açık kalır)
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), sandbox: false }
+  }));
+  fc.install(win, LEGACY ? { channel: 'win-setup', cleanup: false } : { channel: 'win-app' });
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
   // Dış bağlantılar varsayılan tarayıcıda açılır
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+  win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file:')) { e.preventDefault(); if (/^https:\/\//i.test(url)) shell.openExternal(url); } });
   win.webContents.on('before-input-event', (e, i) => {
     if (i.type === 'keyDown' && i.key === 'F12') win.webContents.toggleDevTools();
     if (i.type === 'keyDown' && i.key === 'F11') win.setFullScreen(!win.isFullScreen());
   });
+  if (SMOKE) smoke();
 }
-function shortVer(v) { const p = String(v).split('.'); return p[0] + '.' + (p[1] || 0) + (p[2] && p[2] !== '0' ? '.' + p[2] : ''); }
 
-app.whenReady().then(createWindow);
+// Electron açılış testi (test/electron-smoke.test.js): pencere yüklendi mi, çekirdek başladı mı?
+function smoke() {
+  const out = o => process.stdout.write('CC_SMOKE ' + JSON.stringify(o) + '\n');
+  const consoleErrors = [];
+  win.webContents.on('console-message', (e, level, message) => { if (level >= 3) consoleErrors.push(String(message).slice(0, 300)); });
+  const fail = setTimeout(() => { out({ ok: false, error: 'timeout' }); app.exit(2); }, 45000);
+  win.webContents.on('did-finish-load', () => {
+    setTimeout(async () => {
+      try {
+        const r = await win.webContents.executeJavaScript(`({
+          fc: !!(window.FC && FC.updater && FC.topbar), host: window.FC && FC.host.kind, fcHost: !!window.fcHost, api: !!window.api,
+          version: window.APP_RELEASE && APP_RELEASE.version, appVersion: typeof App !== 'undefined' && App.version, scheme: document.documentElement.dataset.scheme,
+          topbar: !!document.querySelector('.topbar .topbar-actions'), winBtns: document.querySelectorAll('.topbar .win-controls button').length,
+          nav: document.querySelectorAll('#nav .nav-item').length, view: !!document.querySelector('#view .card'),
+          title: document.title, errors: (window.__ccErrors || []).slice(0, 5)
+        })`);
+        r.fullscreen = win.isFullScreen(); r.electronVersion = app.getVersion();
+        r.errors = r.errors.concat(consoleErrors.filter(m => !/net::|Failed to load resource|ERR_/.test(m)));
+        // Ayarlar: Admin ile iletişim EN SONDA, Hakkında ondan önce
+        r.settings = await win.webContents.executeJavaScript(`(App.go('settings'), new Promise(res => setTimeout(() => {
+          const cards = [...document.querySelectorAll('.settings-grid > *')].map(c => c.getAttribute('data-fc-card') || c.id || '');
+          res(cards);
+        }, 400)))`);
+        clearTimeout(fail);
+        out(Object.assign({ ok: r.fc && r.host === 'electron' && r.topbar && r.nav > 0 && !r.errors.length }, r));
+        app.exit(0);
+      } catch (e) { out({ ok: false, error: String(e && e.message || e) }); app.exit(3); }
+    }, 2500);
+  });
+}
+
+app.whenReady().then(() => { if (gotLock) createWindow(); });
 app.on('window-all-closed', () => app.quit());
 
-// ---- Veri (projeler, kütüphane, ayarlar): tek JSON dosyası; yazma önce geçici dosyaya yapılır
-ipcMain.handle('app:info', () => ({ version: PKG.version, short: shortVer(PKG.version), shell: SHELL.shell, dataDir: USER, repo: REPO, platform: 'desktop' }));
-ipcMain.handle('store:load', () => { try { return JSON.parse(fs.readFileSync(DATA, 'utf8')); } catch { return null; } });
+// ---- Veri (projeler, kütüphane, ayarlar): tek JSON dosyası. Yazma atomik: önce .tmp, önceki dosya .yedek olarak kalır.
+ipcMain.handle('app:info', () => ({ version: PKG.version, short: PKG.version, shell: SHELL.shell, legacy: LEGACY, dataDir: USER, repo: REPO, platform: 'desktop' }));
+ipcMain.handle('store:load', () => {
+  for (const f of [DATA, DATA + '.yedek']) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch {} }
+  return null;
+});
 ipcMain.handle('store:save', (e, obj) => {
-  const tmp = DATA + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(obj));
+  const s = JSON.stringify(obj), tmp = DATA + '.tmp';
+  const fd = fs.openSync(tmp, 'w'); try { fs.writeSync(fd, s); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
   try { if (fs.existsSync(DATA)) fs.copyFileSync(DATA, DATA + '.yedek'); } catch {}
   fs.renameSync(tmp, DATA);
   return true;
@@ -62,91 +111,16 @@ ipcMain.handle('file:openText', async (e, { filters }) => {
 });
 ipcMain.handle('shell:open', (e, url) => { if (/^https?:\/\//.test(String(url))) shell.openExternal(url); });
 ipcMain.handle('shell:dataDir', () => shell.openPath(USER));
+ipcMain.handle('app:restart', () => { app.relaunch(); app.exit(0); });
 
-// ---- Uygulama içi güncelleme (GitHub sürümleri): imzalı guncelleme.zip indirilir, doğrulanır, kurulur
-const UPD_ACTIVE = path.join(SHELL.updDir, 'aktif.json');
-async function getJson(url) {
-  const r = await net.fetch(url, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'CommCalc/' + PKG.version } });
-  if (r.status === 404) return { assets: [] }; // henüz yayınlanmış sürüm yok
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
-}
-async function getBuf(url) {
-  const r = await net.fetch(url, { headers: { 'User-Agent': 'CommCalc/' + PKG.version } });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return Buffer.from(await r.arrayBuffer());
-}
-// İndirirken yüzde / MB / kalan / hız bilgisini arayüze gönderir
-async function getBufProgress(url, size) {
-  const r = await net.fetch(url, { headers: { 'User-Agent': 'CommCalc/' + PKG.version } });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const total = size || +r.headers.get('content-length') || 0;
-  const reader = r.body.getReader(), parts = [], samples = [{ t: Date.now(), b: 0 }];
-  let got = 0, last = 0;
-  const send = done => {
-    const now = Date.now(); samples.push({ t: now, b: got });
-    while (samples.length > 2 && now - samples[0].t > 3000) samples.shift();
-    const sec = (now - samples[0].t) / 1000, hiz = sec > 0.25 ? (got - samples[0].b) / sec : 0;
-    const tt = total && got <= total ? total : 0;
-    try { win.webContents.send('update:progress', { inen: got, toplam: tt, yuzde: tt ? got / tt * 100 : 0, kalan: tt ? tt - got : 0, hiz, bitti: !!done }); } catch {}
-  };
-  send(false);
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    parts.push(Buffer.from(value)); got += value.length;
-    if (Date.now() - last > 200) { last = Date.now(); send(false); }
-  }
-  send(true);
-  return Buffer.concat(parts);
-}
-ipcMain.handle('update:check', async () => {
-  try {
-    const rel = await getJson(`https://api.github.com/repos/${REPO}/releases/latest`);
-    const asset = n => (rel.assets || []).find(a => a.name === n);
-    const meta = asset('guncelleme.json');
-    if (!meta) return { ok: true, available: false, current: PKG.version };
-    const info = JSON.parse((await getBuf(meta.browser_download_url)).toString('utf8'));
-    const exe = (rel.assets || []).find(a => /\.exe$/i.test(a.name));
-    return {
-      ok: true, current: PKG.version, version: info.version, notes: rel.body || '', name: rel.name || rel.tag_name,
-      available: SHELL.code(info.version) > SHELL.code(PKG.version),
-      needsFull: (info.minShell || 1) > SHELL.shell, exeUrl: exe && exe.browser_download_url, pageUrl: rel.html_url
-    };
-  } catch (err) { return { ok: false, error: String(err.message || err) }; }
+// Eski kabuk: arayüz sorunsuz açıldı → eski başlatıcının deneme sayacı sıfırlanır (yoksa iki açılıştan sonra eski sürüme döner)
+ipcMain.handle('update:ok', () => {
+  if (!SHELL.updDir) return;
+  const f = path.join(SHELL.updDir, 'aktif.json');
+  try { const a = JSON.parse(fs.readFileSync(f, 'utf8')); if (a.tries) { a.tries = 0; fs.writeFileSync(f, JSON.stringify(a)); } } catch {}
 });
-const signed = (version, sha256, sig) => crypto.verify('sha256', Buffer.from(`CC-GUNCELLEME\n${version}\n${sha256}`),
-  { key: require('./lib/update-key'), dsaEncoding: 'der' }, Buffer.from(sig, 'base64'));
-ipcMain.handle('update:install', async () => {
-  try {
-    const rel = await getJson(`https://api.github.com/repos/${REPO}/releases/latest`);
-    const asset = n => (rel.assets || []).find(a => a.name === n);
-    if (!asset('guncelleme.json') || !asset('guncelleme.zip')) return { ok: false, error: 'Sürümde güncelleme paketi yok' };
-    const info = JSON.parse((await getBuf(asset('guncelleme.json').browser_download_url)).toString('utf8'));
-    if ((info.minShell || 1) > SHELL.shell) return { ok: false, error: 'full' };
-    const za = asset('guncelleme.zip');
-    const buf = await getBufProgress(za.browser_download_url, za.size);
-    const sha = crypto.createHash('sha256').update(buf).digest('hex');
-    if (sha !== info.sha256 || !signed(info.version, sha, info.sig)) return { ok: false, error: 'İmza doğrulanamadı' };
-    const zip = await JSZip.loadAsync(buf);
-    const name = 'v' + info.version, tmp = path.join(SHELL.updDir, name + '.tmp'), dst = path.join(SHELL.updDir, name);
-    fs.rmSync(tmp, { recursive: true, force: true });
-    for (const f of Object.values(zip.files)) {
-      if (f.dir) continue;
-      const out = path.resolve(tmp, f.name);
-      if (!out.startsWith(tmp + path.sep)) continue;
-      fs.mkdirSync(path.dirname(out), { recursive: true });
-      fs.writeFileSync(out, await f.async('nodebuffer'));
-    }
-    if (!fs.existsSync(path.join(tmp, 'app-main.js'))) return { ok: false, error: 'Paket eksik' };
-    fs.rmSync(dst, { recursive: true, force: true });
-    fs.renameSync(tmp, dst);
-    fs.writeFileSync(UPD_ACTIVE, JSON.stringify({ version: info.version, dir: name, tries: 0 }));
-    for (const n of fs.readdirSync(SHELL.updDir)) if (/^v\d/.test(n) && n !== name) try { fs.rmSync(path.join(SHELL.updDir, n), { recursive: true, force: true }); } catch {}
-    return { ok: true, version: info.version };
-  } catch (err) { return { ok: false, error: String(err.message || err) }; }
-});
-// ---- İnternetsiz eşitleme (aynı Wi-Fi / modem)
+
+// ---- İnternetsiz eşitleme (aynı Wi-Fi / modem): ana süreç yalnızca taşır, birleştirmeyi arayüz yapar (src/js/lan.js)
 const LAN = require('./lib/lan-sync');
 const lanWaits = {};
 ipcMain.on('lan:reply', (e, { id, data }) => { const f = lanWaits[id]; delete lanWaits[id]; if (f) f(data); });
@@ -162,9 +136,4 @@ ipcMain.handle('lan:discover', () => LAN.discover(v => { try { win.webContents.s
 ipcMain.handle('lan:sync', async (e, { host, pin, data }) => {
   try { return { ok: true, data: await LAN.sync(host, pin, data) }; }
   catch (err) { return { ok: false, error: String(err.message || err) }; }
-});
-ipcMain.handle('update:restart', () => { app.relaunch(); app.exit(0); });
-// Arayüz sorunsuz açıldı: güncellemenin deneme sayacı sıfırlanır
-ipcMain.handle('update:ok', () => {
-  try { const a = JSON.parse(fs.readFileSync(UPD_ACTIVE, 'utf8')); if (a.tries) { a.tries = 0; fs.writeFileSync(UPD_ACTIVE, JSON.stringify(a)); } } catch {}
 });

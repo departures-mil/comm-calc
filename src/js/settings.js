@@ -1,137 +1,84 @@
 // Platform: desktop (Electron), android (APK) veya web (tarayıcı)
 const PLAT = window.api ? window.api.platform || 'desktop' : 'web';
-// Ayarlar: güncelleme, çevrimiçi tanıma yapılandırması, görünüm, yedekleme.
-const Updater = (() => {
-  let last = null;
-  async function check() {
-    if (window.api) last = await window.api.checkUpdate();
-    else {
-      // Tarayıcı sürümü: yalnızca yeni sürüm bilgisini gösterir
-      try {
-        const r = await fetch(`https://api.github.com/repos/${App.repo}/releases/latest`);
-        const j = await r.json();
-        const v = String(j.tag_name || '').replace(/^v/, '');
-        last = { ok: r.ok, version: v, current: App.version, available: r.ok && verCode(v) > verCode(App.version), notes: j.body || '', pageUrl: j.html_url, web: true };
-      } catch (e) { last = { ok: false, error: e.message }; }
-    }
-    App.setUpdateBadge(last && last.ok && last.available);
-    return last;
-  }
-  const verCode = v => { const p = String(v || '0').split('.').map(n => parseInt(n, 10) || 0); return p[0] * 10000 + (p[1] || 0) * 100 + (p[2] || 0); };
-  async function install() {
-    const r = await window.api.installUpdate();
-    if (r.ok) { toast(t('v{v} kuruldu, yeniden başlatılıyor…', { v: short(r.version) })); await Store.flush(); setTimeout(() => window.api.restart(), 900); }
-    else if (r.error === 'full') toast('Bu sürüm yeni program dosyası gerektiriyor; indirme sayfası açılıyor', 'err');
-    return r;
-  }
-  const short = v => { const p = String(v).split('.'); return p[0] + '.' + (p[1] || 0) + (p[2] && p[2] !== '0' ? '.' + p[2] : ''); };
-  return { check, install, get last() { return last; }, short, verCode };
-})();
-
+// Ayarlar: ortak çekirdeğin ayarlar ızgarası (FC.settings.build). Sıra: Görünüm (tema, renk şeması, yazı boyutu, dil) ·
+// uygulamanın kartları (çevrimiçi ürün tanıma, güncelleme, veri ve yedek) · Asistan Agent · Kullanım Limitleri ·
+// Otomatik hata raporu · Hakkında · Admin ile iletişim (HER ZAMAN EN SONDA).
 Views.settings = (() => {
-  function render(el) {
+  function card(id, title, html) {
+    const c = document.createElement('section');
+    c.className = 'card'; c.id = id; c.setAttribute('data-cc-card', id);
+    c.innerHTML = `<h3>${esc(t(title))}</h3>` + html;
+    return c;
+  }
+  function aiCard() {
     const s = Store.data.settings;
-    el.innerHTML = `
-    <section class="card"><h3 data-notr>Dil / Language / اللغة / Gjuha</h3>
-      <div class="row-btns">${Object.entries(I18N.LANGS).map(([k, l]) => `<button class="btn${k === I18N.lang ? ' primary' : ''}" data-lang="${k}">${l.name}</button>`).join('')}</div>
-    </section>
-    <section class="card" id="upd-card"><h3>Güncelleme</h3>
-      <p>Yüklü sürüm: <b>Comm Calc v${App.short}</b></p>
-      <label class="chk"><input type="checkbox" id="s-auto"${s.autoUpdate ? ' checked' : ''}> Program açılırken güncellemeleri denetle</label>
-      <p class="muted small">Yeni sürüm çıkınca ekranda bildirim penceresi açılır.</p>
-      <div class="row-btns"><button class="btn primary" id="s-check">Güncellemeleri denetle</button></div>
-      <div id="upd-out"></div>
-    </section>
-    <section class="card"><h3>Çevrimiçi ürün tanıma</h3>
+    const c = card('s-ai', 'Çevrimiçi ürün tanıma', `
       <p class="muted small">Ürün görseli veya teknik metinden bilgileri otomatik çıkarmak için Google Gemini kullanılır. Kendi ücretsiz Gemini API anahtarınızı ya da kendi Firebase projenizi girin; kullanım yalnızca sizin hesabınızdan düşer (Ayarlar'daki Kullanım Limitleri'nde görünür).</p>
+      <p class="muted small">İnternet yokken ya da anahtar girilmemişse yapıştırılan teknik metin çevrimdışı ayrıştırıcıyla okunur.</p>
       <label class="full"><span><b>Kendi Firebase projeniz</b> — Firebase konsolu → Proje ayarları → Web uygulaması → <code>firebaseConfig</code> bloğunu olduğu gibi yapıştırın (AI Logic → Gemini Developer API etkin olmalı)</span>
-        <textarea id="s-fb" rows="6" placeholder="const firebaseConfig = { apiKey: '...', authDomain: '...', projectId: '...', appId: '...' };">${esc(s.firebase)}</textarea></label>
+        <textarea id="s-fb" rows="5" placeholder="const firebaseConfig = { apiKey: '...', authDomain: '...', projectId: '...', appId: '...' };">${esc(s.firebase)}</textarea></label>
       <label class="full"><span><b>veya kendi Gemini API anahtarınız</b> — <a href="#" data-url="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a></span><input id="s-key" type="password" value="${esc(s.geminiKey)}" placeholder="AIza…"></label>
-      <label><span>Model</span><input id="s-model" value="${esc(s.aiModel)}"></label>
-      <div class="row-btns"><button class="btn" id="s-test">Bağlantıyı test et</button><span id="s-test-out" class="muted small"></span></div>
-    </section>
-    <section class="card"><h3>Görünüm</h3>
-      <div class="row-btns">${[['dark', 'Koyu'], ['light', 'Açık']].map(([k, l]) => `<button class="btn${s.theme === k ? ' primary' : ''}" data-theme="${k}">${l}</button>`).join('')}</div>
-    </section>
-    <section class="card"><h3>Veri ve yedek</h3>
-      <p class="muted small">${PLAT === 'android' ? t('Projeler, kütüphane ve ayarlar telefonda, uygulamanın kendi klasöründe saklanır; güncellemeler bu verilere dokunmaz.') : window.api ? t('Projeler, kütüphane ve ayarlar bilgisayarda {f} dosyasında saklanır; güncellemeler bu verilere dokunmaz.', { f: '<code>%APPDATA%\\Comm Calc\\veri.json</code>' }) : t('Projeler, kütüphane ve ayarlar tarayıcıda saklanır; güncellemeler bu verilere dokunmaz.')}</p>
-      <div class="row-btns"><button class="btn" id="s-bak">Tüm verileri yedekle</button><button class="btn" id="s-res">Yedekten geri yükle</button>${PLAT === 'desktop' ? '<button class="btn" id="s-dir">Veri klasörünü aç</button>' : ''}</div>
-    </section>
-    <section class="card" id="kul-yer"></section>
-    <section class="card" id="contact"><h3>Yöneticiye mesaj gönder</h3>
-      <p class="muted small">Öneri, hata bildirimi veya sorunuzu yazın; mesaj doğrudan program yöneticisine iletilir. Size dönüş yapılmasını istiyorsanız e-posta veya telefon bırakın.</p>
-      <div class="form">
-        <label><span>Adınız (isteğe bağlı)</span><input id="c-name" maxlength="100" value="${esc(s.contactName || '')}"></label>
-        <label><span>E-posta / telefon (isteğe bağlı)</span><input id="c-reply" maxlength="200" value="${esc(s.contactReply || '')}"></label>
-        <label><span>Konu</span><select id="c-subj">${['Öneri', 'Hata bildirimi', 'Soru', 'Diğer'].map(k => `<option value="${k}">${k}</option>`).join('')}</select></label>
-        <label class="full"><span>Mesajınız</span><textarea id="c-msg" rows="5" maxlength="4000"></textarea></label>
-      </div>
-      <div class="row-btns"><button class="btn primary" id="c-send">Gönder</button><span id="c-st" class="muted small"></span></div>
-    </section>
-    <section class="card"><h3>Hakkında</h3>
-      <p><b>Comm Calc v${App.short}</b> — İHA alıcı/verici link bütçesi, anten ve RF araçları.</p>
-      <p class="muted small">Kaynak ve sürümler: <a href="#" data-url="https://github.com/${App.repo}/releases">github.com/${App.repo}</a> ${PLAT === 'desktop' ? ' · Kısayollar: F11 tam ekran, F12 geliştirici araçları.' : ''}</p>
-    </section>`;
-    const save = () => Store.save();
-    { const ky = $('#kul-yer', el); if (ky && window.Kullanim) { const k = Kullanim.kart(); k.classList.add('card'); k.setAttribute('data-notr', ''); ky.replaceWith(k); } }
-    $('#s-auto', el).onchange = e => { s.autoUpdate = e.target.checked; save(); };
-    $('#s-fb', el).oninput = e => { s.firebase = e.target.value; save(); };
-    $('#s-key', el).oninput = e => { s.geminiKey = e.target.value.trim(); save(); };
-    $('#s-model', el).oninput = e => { s.aiModel = e.target.value.trim(); save(); };
-    $$('[data-lang]', el).forEach(b => b.onclick = () => App.setLang(b.dataset.lang));
-    $$('[data-url]', el).forEach(a => a.onclick = e => { e.preventDefault(); openUrl(a.dataset.url); });
-    $$('[data-theme]', el).forEach(b => b.onclick = () => { s.theme = b.dataset.theme; App.applyTheme(); save(); render(el); });
-    $('#s-check', el).onclick = () => showUpdate(el, true);
-    $('#s-test', el).onclick = async () => {
-      const o = $('#s-test-out', el); o.textContent = 'Deneniyor…';
+      <label class="full"><span>Model</span><input id="s-model" value="${esc(s.aiModel)}"></label>
+      <div class="row-btns"><button class="btn" id="s-test">Bağlantıyı test et</button><span id="s-test-out" class="muted small"></span></div>`);
+    $('#s-fb', c).oninput = e => { s.firebase = e.target.value; Store.save(); };
+    $('#s-key', c).oninput = e => { s.geminiKey = e.target.value.trim(); Store.save(); };
+    $('#s-model', c).oninput = e => { s.aiModel = e.target.value.trim(); Store.save(); };
+    $('#s-test', c).onclick = async () => {
+      const o = $('#s-test-out', c); o.textContent = t('Deneniyor…');
       try { const r = await AI.recognize({ text: 'Test: 5.8G VTX 600mW MMCX' }); o.textContent = '✓ ' + t('Çalışıyor:') + ' ' + JSON.stringify(r).slice(0, 120); }
       catch (e) { o.textContent = '✕ ' + e.message; }
     };
-    $('#s-bak', el).onclick = () => downloadText('comm-calc-yedek-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(Object.assign({ commcalcBackup: 1 }, Store.data), null, 1));
-    $('#s-res', el).onclick = async () => {
-      const t = await pickTextFile(); if (!t) return;
-      try { const o = JSON.parse(t); if (!o.commcalcBackup || !o.projects) throw 0; if (!await confirmBox('Mevcut tüm veriler yedektekiyle değiştirilsin mi?', 'Geri yükle')) return; delete o.commcalcBackup; Store.data = o; await Store.flush(); location.reload(); }
-      catch { toast('Geçersiz yedek dosyası', 'err'); }
+    return c;
+  }
+  function updCard() {
+    const s = Store.data.settings;
+    const c = card('s-upd', 'Güncelleme', `
+      <p>${esc(t('Yüklü sürüm:'))} <b>Comm Calc v${esc(App.version)}</b></p>
+      <label class="chk"><input type="checkbox" id="s-auto"${s.autoUpdate ? ' checked' : ''}> Program açılırken güncellemeleri denetle</label>
+      <p class="muted small">Yeni sürüm çıkınca ekranda bildirim penceresi açılır.</p>
+      <p class="muted small">Güncelleme GitHub sürümlerinden gelir; yalnızca değişen kısımlar indirilir ve SHA-256 ile doğrulanır.</p>
+      <div class="row-btns"><button class="btn primary" id="s-check">Güncellemeleri denetle</button></div>`);
+    $('#s-auto', c).onchange = e => { s.autoUpdate = e.target.checked; Store.save(); };
+    $('#s-check', c).onclick = () => Kabuk.checkNow(true);
+    return c;
+  }
+  function dataCard() {
+    const d = Store.data, nA = (d.arsiv || []).length, nC = (d.cakisma || []).length;
+    const c = card('s-data', 'Veri ve yedek', `
+      <p class="muted small">${PLAT === 'android' ? t('Projeler, kütüphane ve ayarlar telefonda, uygulamanın kendi klasöründe saklanır; güncellemeler bu verilere dokunmaz.') : window.api ? t('Projeler, kütüphane ve ayarlar bilgisayarda {f} dosyasında saklanır; güncellemeler bu verilere dokunmaz.', { f: '<code>%APPDATA%\\Comm Calc\\veri.json</code>' }) : t('Projeler, kütüphane ve ayarlar tarayıcıda saklanır; güncellemeler bu verilere dokunmaz.')}</p>
+      <div class="row-btns"><button class="btn" id="s-bak">Tüm verileri yedekle</button><button class="btn" id="s-res">Yedekten geri yükle</button>${PLAT === 'desktop' ? '<button class="btn" id="s-dir">Veri klasörünü aç</button>' : ''}</div>
+      <p class="muted small" style="margin-top:12px">${esc(t('Wi‑Fi eşitlemesinde hiçbir kayıt silinmez: öbür cihazda silinen kayıt burada arşive taşınır, çakışan eski sürüm yedeklenir.'))}</p>
+      <div class="row-btns"><button class="btn" id="s-arc">${esc(t('Arşiv ve çakışma yedekleri'))} (${nA + nC})</button></div>`);
+    $('#s-bak', c).onclick = () => downloadText('comm-calc-yedek-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(Object.assign({ commcalcBackup: 1 }, Store.data), null, 1));
+    $('#s-res', c).onclick = async () => {
+      const txt = await pickTextFile(); if (!txt) return;
+      try {
+        const o = JSON.parse(txt); if (!o.commcalcBackup || !o.projects) throw 0;
+        if (!await confirmBox(t('Mevcut tüm veriler yedektekiyle değiştirilsin mi?'), t('Geri yükle'))) return;
+        // Mevcut hâl kaybolmasın: geri yüklemeden önce bir kopyası arşive alınır
+        delete o.commcalcBackup;
+        o.arsiv = (o.arsiv || []).concat((Store.data.arsiv || []), [{ tur: 'yedek', zaman: Date.now(), kayit: { projects: Store.data.projects, library: Store.data.library }, neden: 'geri-yukleme' }]);
+        o.cakisma = (o.cakisma || []).concat(Store.data.cakisma || []);
+        Store.data = o; await Store.flush(); location.reload();
+      } catch { toast(t('Geçersiz yedek dosyası'), 'err'); }
     };
-    $('#c-send', el).onclick = () => sendContact(el);
-    if ($('#s-dir', el)) $('#s-dir', el).onclick = () => window.api.openDataDir();
-    if (Updater.last) showUpdate(el, false);
+    if ($('#s-dir', c)) $('#s-dir', c).onclick = () => window.api.openDataDir();
+    $('#s-arc', c).onclick = () => LanSync.archiveDialog();
+    return c;
   }
-  // Mesaj Firebase (Firestore) üzerinden yalnızca yöneticiye gider: kurallar yalnızca yeni mesaj yazmaya izin verir, kimse okuyamaz
-  async function sendContact(el) {
-    const s = Store.data.settings, st = $('#c-st', el), btn = $('#c-send', el);
-    const msg = $('#c-msg', el).value.trim();
-    if (!msg) { st.textContent = t('Lütfen mesajınızı yazın.'); st.className = 'warn-t small'; $('#c-msg', el).focus(); return; }
-    s.contactName = $('#c-name', el).value.trim(); s.contactReply = $('#c-reply', el).value.trim(); Store.save();
-    const F = v => ({ stringValue: String(v).slice(0, 4000) });
-    const fields = { mesaj: F(msg), konu: F($('#c-subj', el).value), dil: F(I18N.lang), surum: F(App.version), platform: F(PLAT), zaman: { timestampValue: new Date().toISOString() } };
-    if (s.contactName) fields.ad = F(s.contactName.slice(0, 100));
-    if (s.contactReply) fields.iletisim = F(s.contactReply.slice(0, 200));
-    btn.disabled = true; st.textContent = t('Gönderiliyor…'); st.className = 'muted small';
-    try {
-      const c = AI.BUILTIN;
-      const r = await fetch(`https://firestore.googleapis.com/v1/projects/${c.projectId}/databases/(default)/documents/mesajlar?key=${c.apiKey}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }) });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      st.textContent = '✓ ' + t('Mesajınız yöneticiye gönderildi. Teşekkürler!'); st.className = 'ok-t small';
-      $('#c-msg', el).value = '';
-    } catch (e) { st.textContent = t('Gönderilemedi; internet bağlantısını kontrol edip tekrar deneyin.'); st.className = 'warn-t small'; }
-    finally { btn.disabled = false; }
+  function aboutText(grid) {
+    const ab = grid.querySelector('[data-fc-card="about"]');
+    if (!ab || ab.querySelector('.cc-about')) return;
+    const p = document.createElement('p');
+    p.className = 'muted small cc-about';
+    p.innerHTML = `${esc(t('İHA alıcı/verici link bütçesi, anten ve RF araçları.'))} <a href="#" data-url="https://github.com/${App.repo}/releases">github.com/${App.repo}</a>${PLAT === 'desktop' ? ' · ' + esc(t('Kısayollar: F11 tam ekran, F12 geliştirici araçları.')) : ''}`;
+    ab.insertBefore(p, ab.children[2] || null);
   }
-  async function showUpdate(el, force) {
-    const out = $('#upd-out', el);
-    if (force) out.innerHTML = '<p class="muted">Denetleniyor…</p>';
-    const r = force ? await Updater.check() : Updater.last;
-    if (!out.isConnected) return;
-    if (!r || !r.ok) { out.innerHTML = `<p class="warn-t">${t('Denetlenemedi: {e}. İnternet bağlantısını kontrol edin.', { e: esc((r && r.error) || t('bilinmeyen hata')) })}</p>`; return; }
-    if (!r.available) { out.innerHTML = `<p class="ok-t">✓ En güncel sürümü kullanıyorsunuz (v${Updater.short(r.current)}).</p>`; return; }
-    out.innerHTML = `<div class="upd-box"><p><b>Yeni sürüm: v${Updater.short(r.version)}</b></p>${News.clean(r.notes) ? `<pre class="notes">${esc(News.clean(r.notes))}</pre>` : ''}
-      <div class="row-btns">${r.web ? `<button class="btn primary" data-go="${esc(r.pageUrl)}">Sürüm sayfasını aç</button>`
-        : r.needsFull ? `<button class="btn primary" data-go="${esc(r.exeUrl || r.pageUrl)}">Yeni programı indir</button><span class="muted small">Bu sürüm program dosyasının yenilenmesini gerektiriyor.</span>`
-        : '<button class="btn primary" id="u-inst">Güncelle ve yeniden başlat</button>'}</div><p class="muted small" id="u-st"></p></div>`;
-    $$('[data-go]', out).forEach(b => b.onclick = () => openUrl(b.dataset.go));
-    const ib = $('#u-inst', out);
-    if (ib) ib.onclick = async () => { ib.disabled = true; $('#u-st', out).textContent = 'İndiriliyor ve doğrulanıyor…'; const x = await Updater.install(); if (!x.ok) { ib.disabled = false; $('#u-st', out).textContent = t('Hata:') + ' ' + x.error; } };
+  function render(el) {
+    el.innerHTML = '';
+    const grid = Kabuk.buildSettings(el, [aiCard(), updCard(), dataCard()]);
+    aboutText(grid);
+    $$('[data-url]', el).forEach(a => a.onclick = e => { e.preventDefault(); openUrl(a.dataset.url); });
   }
   return { title: 'Ayarlar', render };
 })();

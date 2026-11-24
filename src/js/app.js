@@ -1,54 +1,53 @@
-// Uygulama kabuğu: gezinme, tema, açılışta güncelleme denetimi.
+// Uygulama kabuğu: gezinme, dil ve açılış. Üst çubuk, tema, güncelleme, "neler yeni", ayarlar düzeni ortak çekirdekten
+// (src/js/kabuk.js → FC.*). Sürüm tek kaynaktan gelir: package.json → tools/surum.js → src/js/surum.js (window.APP_RELEASE).
 const App = {
-  version: '1.11.0', short: '1.11', repo: 'departures-mil/comm-calc', current: null,
-  NAV: [['budget', 'Link Bütçesi', '⟿'], ['tools', 'Araçlar', '⚙'], ['tables', 'Tablolar', '▦'], ['antennas', 'Antenler', '⌁'], ['library', 'Kütüphane', '☰'], ['learn', 'Eğitim', '✎'], ['settings', 'Ayarlar', '⛭']],
+  version: (window.APP_RELEASE || {}).version || '0.0.0', repo: 'departures-mil/comm-calc', current: null, legacy: false,
+  NAV: [['budget', 'Link Bütçesi'], ['tools', 'Araçlar'], ['tables', 'Tablolar'], ['antennas', 'Antenler'], ['library', 'Kütüphane'], ['learn', 'Eğitim'], ['settings', 'Ayarlar']],
+  get short() { return this.version; },
   async start() {
-    if (window.api) { const i = await window.api.info(); this.version = i.version; this.short = i.short; this.repo = i.repo; }
+    let info = null;
+    if (window.api) { try { info = await window.api.info(); } catch {} }
+    this.legacy = !!(info && info.legacy);
     await Store.init();
-    I18N.set(Store.data.settings.lang);
-    this.applyTheme();
+    Kabuk.init(info);
+    const lang = Kabuk.initialLang(Store.data.settings.lang);
+    Store.data.settings.lang = lang;
+    I18N.set(lang);
+    Kabuk.langChanged(lang);
     this.renderShell();
+    Kabuk.topbar();
     LanSync.init();
-    $('#upd-banner-btn').onclick = () => this.go('settings');
     this.go(localStorage.getItem('cc-view') || 'budget');
-    if (window.api) window.api.updateOk();
-    News.afterUpdate();
-    News.startWatch();
-    // Admin duyuruları: yeni duyuru ekranda açılır, sonra 🔔 düğmesinden tekrar okunur
-    window.duyuruLinkAc = u => openUrl(u);
-    Kullanim.baslat({ uygulama: 'comm-calc', bulut: false, ai: true, aiAd: 'Gemini', dil: () => (I18N.lang === 'sq' ? 'en' : I18N.lang) });
-    Duyuru.baslat({ uygulama: 'comm-calc', surum: this.version, dil: () => (I18N.lang === 'sq' ? 'en' : I18N.lang), guncelle: () => this.go('settings') });
+    if (window.api && window.api.updateOk) window.api.updateOk();   // eski kabuk: açılış başarılı (deneme sayacı sıfırlanır)
+    Kabuk.started();
   },
-  // Dil değişince yeniden çizilen kabuk: menü, alt bilgi, dil seçici
+  // Dil değişince yeniden çizilen kabuk: menü, alt bilgi
   renderShell() {
-    $('#ver').textContent = 'v' + this.short;
-    document.title = 'Comm Calc v' + this.short;
-    $('#nav').innerHTML = this.NAV.map(([k, l, i]) => `<button class="nav-i" data-v="${k}"><span class="ni">${i}</span><span>${t(l)}</span>${k === 'settings' ? '<span class="upd-dot" hidden></span>' : ''}</button>`).join('');
-    $$('#nav .nav-i').forEach(b => b.onclick = () => this.go(b.dataset.v));
+    $('#ver').textContent = 'v' + this.version;
+    document.title = 'Comm Calc v' + this.version;
+    $('#nav').innerHTML = this.NAV.map(([k, l]) => `<button type="button" class="nav-item" data-v="${k}">${Kabuk.icon(k)}<span>${t(l)}</span>${k === 'settings' ? '<span class="upd-dot" hidden></span>' : ''}</button>`).join('');
+    $$('#nav .nav-item').forEach(b => b.onclick = () => { this.go(b.dataset.v); Kabuk.closeDrawer(); });
     $('#side-f').textContent = t('İHA link bütçesi');
-    $('#upd-banner-t').textContent = t('Yeni sürüm hazır:');
-    $('#upd-banner-btn').textContent = t('Güncelle');
-    $('#langs').innerHTML = Object.entries(I18N.LANGS).map(([k, l]) => `<button class="lang${k === I18N.lang ? ' on' : ''}" data-lang="${k}">${l.name}</button>`).join('');
-    $$('#langs .lang').forEach(b => b.onclick = () => this.setLang(b.dataset.lang));
-    if (typeof LanSync !== 'undefined') LanSync.titles();
-    if (this.current) $$('#nav .nav-i').forEach(b => b.classList.toggle('on', b.dataset.v === this.current));
+    if (this.current) $$('#nav .nav-item').forEach(b => b.classList.toggle('active', b.dataset.v === this.current));
+    this.setUpdateBadge(this._upd);
   },
   setLang(code) {
+    if (!I18N.LANGS[code]) return;
+    if (Store.data.settings.lang === code && I18N.lang === code) return;
     Store.data.settings.lang = code; Store.save();
-    I18N.set(code); this.renderShell(); this.go(this.current || 'budget');
+    I18N.set(code); Kabuk.langChanged(code); this.renderShell(); this.go(this.current || 'budget');
   },
   go(view, arg) {
     if (!Views[view]) view = 'budget';
     if (view === 'antennas' && arg) Views.antennas.select && Views.antennas.select(arg);
     this.current = view;
     try { localStorage.setItem('cc-view', view); } catch {}
-    $$('#nav .nav-i').forEach(b => b.classList.toggle('on', b.dataset.v === view));
+    $$('#nav .nav-item').forEach(b => b.classList.toggle('active', b.dataset.v === view));
     $('#title').textContent = t(Views[view].title);
     const main = $('#view');
     main.scrollTop = 0;
     Views[view].render(main);
   },
-  applyTheme() { document.documentElement.dataset.theme = Store.data.settings.theme || 'dark'; },
-  setUpdateBadge(on) { $$('.upd-dot').forEach(d => d.hidden = !on); }
+  setUpdateBadge(on) { this._upd = !!on; $$('.upd-dot').forEach(d => d.hidden = !on); }
 };
-window.addEventListener('DOMContentLoaded', () => App.start().catch(e => { document.body.innerHTML = '<pre style="padding:20px;color:#e5484d">Error: ' + esc(e.stack || e) + '</pre>'; }));
+window.addEventListener('DOMContentLoaded', () => App.start().catch(e => { console.error(e); document.body.innerHTML = '<pre style="padding:20px;color:#e5484d">Error: ' + esc(e.stack || e) + '</pre>'; }));
