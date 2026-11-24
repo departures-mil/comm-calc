@@ -1,5 +1,5 @@
-## Comm Calc v1.12
+## Comm Calc v1.12.1
 
-Yeni: ✦ Asistan Agent — bütün programlarınızdaki çalışmanızı izler ve daha verimli çalışmanız için öneriler verir (bildirim + program içi panel). Ayarlar'dan açılıp kapatılabilir.
+Asistan Agent: bilgisayardaki diğer programlarla ortak çalışma kaydı düzeltildi.
 
 **Güncelleme:** Programda Ayarlar → Güncellemeleri denetle → Güncelle (tek tık).
