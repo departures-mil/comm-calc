@@ -1,2 +1,2 @@
 /* OTOMATİK: node tools/surum.js (kaynak: package.json). Elle düzenlemeyin. */
-window.APP_RELEASE = {"version":"1.13.0"};
+window.APP_RELEASE = {"version":"1.13.1"};

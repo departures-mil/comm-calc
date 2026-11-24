@@ -25,13 +25,14 @@ test('tek semver sürüm (etiket vX.Y.Z, kısaltma yok): package.json = surum.js
 });
 
 test('gömülü ortak çekirdek: sürüm kaydı, modüller, kurulum kanalı düzeltmesi', () => {
-  for (const f of ['cekirdek/VERSION', 'src/cekirdek/VERSION']) assert.match(R(f), /^ortak-cekirdek ebec004[0-9a-f]{33}\n/);
+  for (const f of ['cekirdek/VERSION', 'src/cekirdek/VERSION']) assert.match(R(f), /^ortak-cekirdek [0-9a-f]{40}\n/);
   delete globalThis.FC;
   require('../src/cekirdek/fc-core.js');
   const FC = globalThis.FC;
   for (const m of ['updater', 'topbar', 'settings', 'contact', 'crash', 'look', 'onboarding', 'whatsnew', 'announcements', 'progress', 'host', 'lanMerge', 'usage']) assert.ok(FC[m], 'FC.' + m);
   const main = R('cekirdek/electron/fc-electron-main.js');
-  assert.match(main, /if \(isSetup\(meta\)\) return runSetup/, 'win-setup exe app.asar yerine yazılmamalı');
+  assert.match(main, /if \(isSetup\(meta\)\) \{/, 'win-setup exe app.asar yerine yazılmamalı');
+  assert.ok(main.includes('ELECTRON_RUN_AS_NODE') && !/tasklist \/FI/.test(main), 'güncelleme penceresiz (konsol betiği yok)');
   for (const f of fs.readdirSync(path.join(ROOT, 'src/cekirdek/fonts')).filter(f => f.endsWith('.woff2'))) assert.ok(fs.statSync(path.join(ROOT, 'src/cekirdek/fonts', f)).size > 1000);
   for (const m of R('src/cekirdek/css/tokens.css').matchAll(/url\(([^)]+)\)/g)) assert.ok(fs.existsSync(path.join(ROOT, 'src/cekirdek/css', m[1].replace(/["']/g, ''))), m[1]);
 });
