@@ -2,6 +2,11 @@
 // (FC.whatsnew; Kabuk.notes). Her yeni sürümde EN ÜSTE bir kayıt eklenir: v = tam sürüm (X.Y.Z), tr/en/ar/sq madde listeleri.
 // tools/surum.js en üstteki kaydı GitHub sürüm notu (release-notes.json → latest.json notes) olarak da kullanır.
 const NEWS = [
+  { v: '1.13.2',
+    tr: ["Eski sürümlerden bu sürüme geçiş bir kez tam kurulumla yapılır (eski güncelleyicideki siyah pencere sorunu yaşanmaz). Sonraki güncellemeler yine arka planda, kendiliğinden. Kayıtlar korunur."],
+    en: ["Moving from older versions to this one is done once with a full install (avoids the black-window problem of the old updater). Later updates again run by themselves in the background. Records are kept."],
+    ar: ["يتم الانتقال من الإصدارات القديمة إلى هذا الإصدار مرة واحدة بتثبيت كامل (تجنباً لمشكلة النوافذ السوداء في المحدِّث القديم). التحديثات اللاحقة تتم تلقائياً في الخلفية. تبقى السجلات محفوظة."],
+    sq: ["Kalimi nga versionet e vjetra në këtë version bëhet një herë me instalim të plotë (shmang problemin e dritareve të zeza të përditësuesit të vjetër). Përditësimet e mëvonshme bëhen sërish vetë në sfond. Regjistrat ruhen."] },
   { v: '1.13.1',
     tr: ["Güncellemeler artık tamamen kendiliğinden: yeni sürüm arka planda sessizce indirilir, program kapanınca pencere açmadan kurulur; bir sonraki açılışta yeni sürüm gelir. Hemen kurmak için Güncelle → «Şimdi kur ve yeniden aç». Kurulum gereken güncellemeler de sessiz yapılır. Kayıtlara dokunulmaz."],
     en: ["Updates are now fully automatic: the new version downloads quietly in the background and installs without any window when the program closes; the next start opens the new version. To install right away: Update → «Install now and reopen». Updates that need the installer also run silently. Records are not touched."],
