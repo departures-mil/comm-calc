@@ -168,8 +168,10 @@ test('paketleme: NSIS (kullanıcı başına, tek tık, tr/en/ar), veri klasörü
   for (const f of ['cekirdek/**/*', 'src/**/*', 'lib/**/*', 'assets/**/*', 'main.js', 'app-main.js', 'preload.js']) assert.ok(b.files.includes(f), f);
   assert.ok(!b.asarUnpack, 'asarUnpack yama kapsamı dışında kalır');
   assert.ok(!pkg.dependencies || !Object.keys(pkg.dependencies).length, 'app.asar içinde node_modules yok');
-  const wf = R('.github/workflows/release.yml');
+  // .github/workflows'a yazma izni gelene kadar etkin olmayan kopya ci/workflows/ altındadır
+  const wfPath = /reusable-release/.test(R('.github/workflows/release.yml')) ? '.github/workflows' : 'ci/workflows';
+  const wf = R(wfPath + '/release.yml');
   assert.match(wf, /win-app=app\.asar/); assert.match(wf, /win-setup=\*Setup\*\.exe/);
   assert.match(wf, /reusable-release\.yml@main/); assert.match(wf, /needs: \[test, build\]/);
-  assert.match(R('.github/workflows/eski-kanal.yml'), /guncelleme\.zip/);
+  assert.match(R(wfPath + '/eski-kanal.yml'), /guncelleme\.zip/);
 });
