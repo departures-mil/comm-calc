@@ -1,0 +1,47 @@
+# Yeni sürüm yayınlanınca (release/guncelleme.json değişince) Windows kurulum dosyasını (setup) üretip
+# aynı GitHub sürümüne ekler. Program güncellemeleri yine guncelleme.zip ile program içinden gelir.
+# İndirme linkleri sayfası (departures-mil/duyurular) bu dosyayı kendiliğinden listeler.
+name: Kurulum dosyasi
+
+on:
+  push:
+    branches: [main]
+    paths: ['release/guncelleme.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kurulum
+  cancel-in-progress: false
+
+jobs:
+  kurulum:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Program klasoru
+        run: |
+          npm ci --no-audit --no-fund
+          node web/build.mjs
+          FULL=$(node -p "require('./release/guncelleme.json').version")
+          echo "FULL=$FULL" >> "$GITHUB_ENV"
+          echo "T=$(node -p "const v='$FULL'.split('.');'v'+v[0]+'.'+v[1]+(v[2]&&v[2]!=='0'?'.'+v[2]:'')")" >> "$GITHUB_ENV"
+          CC_VER=$FULL npx electron-builder --win dir --x64 --publish never -c.extraMetadata.version=$FULL
+          ls dist
+      - name: Kurulum dosyasi
+        run: |
+          sudo apt-get install -y -q nsis >/dev/null
+          LC_ALL=C.UTF-8 makensis -V2 -DDIR -DNAME="Comm Calc" -DEXE="Comm Calc.exe" -DSRC="$PWD/dist/win-unpacked" \
+            -DVERSION="$FULL" -DREGKEY=CommCalc -DICON="$PWD/assets/icon.ico" \
+            -DOUT="$PWD/Comm-Calc-Setup-$FULL.exe" kurulum/kurulum.nsi
+      - name: Surume ekle
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          for i in $(seq 1 40); do gh release view "$T" >/dev/null 2>&1 && break; sleep 15; done
+          gh release view "$T" >/dev/null 2>&1 || gh release create "$T" --target "$GITHUB_SHA" --title "Comm Calc $T" --notes-file release/NOTLAR.md
+          gh release upload "$T" "Comm-Calc-Setup-$FULL.exe" --clobber
