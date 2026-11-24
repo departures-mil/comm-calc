@@ -56,33 +56,19 @@ const Store = {
 };
 window.addEventListener('beforeunload', () => { if (Store.timer) Store.flush(); });
 
-function toast(msg, kind) {
-  const t = document.createElement('div');
-  t.className = 'toast ' + (kind || '');
-  t.textContent = msg;
-  $('#toasts').appendChild(t);
-  setTimeout(() => t.classList.add('out'), 3200);
-  setTimeout(() => t.remove(), 3700);
-}
-// Basit modal; body HTML, buttons [{label, cls, onClick(close) -> false ise kapanmaz}]
+// Bildirim ve pencere ortak çekirdekten (FC.ui): Falcon görünümü, Esc ile kapanma, sağdan sola düzen.
+function toast(msg, kind) { FC.ui.toast(msg, kind === 'err' ? 'error' : kind || ''); }
+// modal(title, body(HTML|Node), buttons [{label, cls, onClick(close, kutu) -> false ise kapanmaz}]) → {el, close}
 function modal(title, body, buttons) {
-  const w = document.createElement('div');
-  w.className = 'modal-wrap';
-  w.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div class="modal-h"><h3>${esc(title)}</h3><button class="icon-btn" data-x aria-label="${t('Kapat')}">✕</button></div><div class="modal-b"></div><div class="modal-f"></div></div>`;
-  const b = $('.modal-b', w);
-  if (typeof body === 'string') b.innerHTML = body; else b.appendChild(body);
-  const close = () => w.remove();
-  $('[data-x]', w).onclick = close;
-  w.addEventListener('mousedown', e => { if (e.target === w) close(); });
-  for (const bt of (buttons || [{ label: t('Kapat') }])) {
-    const el = document.createElement('button');
-    el.className = 'btn ' + (bt.cls || '');
-    el.textContent = bt.label;
-    el.onclick = async () => { if (bt.onClick) { const r = await bt.onClick(close, w); if (r === false) return; } close(); };
-    $('.modal-f', w).appendChild(el);
-  }
-  document.body.appendChild(w);
-  return { el: w, close };
+  const list = (buttons || [{ label: t('Kapat') }]).map(bt => ({ label: bt.label, cls: bt.cls,
+    onClick: (close, btn) => {
+      if (!bt.onClick) return true;
+      const r = bt.onClick(close, m.el);
+      if (r && typeof r.then === 'function') { r.then(x => { if (x !== false) close(); }); return false; }
+      return r !== false;
+    } }));
+  const m = FC.ui.modal({ title, body, buttons: list });
+  return { el: m.el, close: m.close };
 }
 function confirmBox(msg, okLabel) {
   return new Promise(res => modal(t('Onay'), `<p>${esc(msg)}</p>`, [{ label: t('Vazgeç'), onClick: () => res(false) }, { label: okLabel || t('Tamam'), cls: 'primary', onClick: () => res(true) }]));

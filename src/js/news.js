@@ -1,6 +1,12 @@
-// Sürüm yenilikleri: güncellemeden sonraki ilk açılışta ekranda gösterilir.
-// Her yeni sürümde en üste bir kayıt eklenir (tr, en, ar, sq; her biri madde listesi).
+// Sürüm yenilikleri: güncellemeden sonraki ilk açılışta ortak çekirdeğin "Bu sürümde neler yeni" penceresinde gösterilir
+// (FC.whatsnew; Kabuk.notes). Her yeni sürümde EN ÜSTE bir kayıt eklenir: v = tam sürüm (X.Y.Z), tr/en/ar/sq madde listeleri.
+// tools/surum.js en üstteki kaydı GitHub sürüm notu (release-notes.json → latest.json notes) olarak da kullanır.
 const NEWS = [
+  { v: '1.12.0',
+    tr: ['Yeni görünüm (Falcon) ve Ayarlar → Görünüm\'de renk şeması seçici; eski renkler "Klasik" şemasında.', 'Program artık kurulum dosyasıyla (Setup) gelir ve her açılışta tam ekran açılır; sağ üstte Eşitle, Wi‑Fi, Güncelle, tema, dil ile Küçült, Orta, Tam ekran, Kapat düğmeleri.', 'Tek tuşla güncelleme GitHub Releases\'tan: yalnızca değişen kısımlar indirilir ve SHA-256 ile doğrulanır; yüzde, MB, kalan MB ve hız görünür.', 'Wi‑Fi eşitlemede hiçbir kayıt silinmez: öbür cihazda silinen kayıt burada arşive taşınır, çakışan eski sürüm yedeklenir (Ayarlar → Veri ve yedek).', 'Yazı boyutu (A− / A+), Arapça yazı tipi, ilk açılış rehberi, otomatik hata raporu (kapatılabilir); Admin ile iletişim Ayarlar\'ın en sonunda.', 'Sürüm numarası artık tam yazılır: v1.12.0.'],
+    en: ['New look (Falcon) and a colour scheme picker in Settings → Appearance; the previous colours are kept as the "Classic" scheme.', 'The program now comes with an installer (Setup) and opens full screen every time; Sync, Wi‑Fi, Update, theme, language plus Minimize, Half, Full screen and Close at the top right.', 'One-click updates from GitHub Releases: only the changed parts are downloaded and verified with SHA-256; percent, MB, remaining MB and speed are shown.', 'Wi‑Fi sync never deletes anything: a record deleted on the other device is moved to the archive here and an older conflicting version is backed up (Settings → Data and backup).', 'Text size (A− / A+), Arabic font, first-run guide, automatic error reports (can be turned off); Contact the admin is the last item in Settings.', 'Version numbers are now written in full: v1.12.0.'],
+    ar: ['مظهر جديد (Falcon) واختيار نظام الألوان من الإعدادات ← المظهر؛ الألوان السابقة متاحة باسم «الكلاسيكي».', 'يأتي البرنامج الآن بملف تثبيت (Setup) ويفتح بملء الشاشة في كل مرة؛ أزرار المزامنة وWi‑Fi والتحديث والسمة واللغة مع التصغير والنصف وملء الشاشة والإغلاق في أعلى اليمين.', 'تحديث بضغطة واحدة من GitHub Releases: تُنزَّل الأجزاء المتغيرة فقط ويُتحقق منها بـ SHA-256؛ مع عرض النسبة والميغابايت والمتبقي والسرعة.', 'مزامنة Wi‑Fi لا تحذف شيئاً: السجل المحذوف على الجهاز الآخر يُنقل هنا إلى الأرشيف، والنسخة الأقدم المتعارضة تُحفظ احتياطياً (الإعدادات ← البيانات والنسخ الاحتياطي).', 'حجم الخط (A− / A+) وخط عربي ودليل التشغيل الأول وتقارير أخطاء تلقائية (يمكن إيقافها)؛ التواصل مع المسؤول في آخر الإعدادات.', 'أصبح رقم الإصدار يُكتب كاملاً: v1.12.0.'],
+    sq: ['Pamje e re (Falcon) dhe zgjedhës i skemës së ngjyrave te Cilësimet → Pamja; ngjyrat e mëparshme ruhen si skema "Klasike".', 'Programi tani vjen me instalues (Setup) dhe hapet në ekran të plotë çdo herë; lart djathtas: Sinkronizo, Wi‑Fi, Përditëso, tema, gjuha si dhe Minimizo, Gjysmë, Ekran i plotë, Mbyll.', 'Përditësim me një klikim nga GitHub Releases: shkarkohen vetëm pjesët e ndryshuara dhe verifikohen me SHA-256; shfaqen përqindja, MB, MB të mbetura dhe shpejtësia.', 'Sinkronizimi me Wi‑Fi nuk fshin asgjë: regjistri i fshirë në pajisjen tjetër kalon këtu në arkiv dhe versioni më i vjetër në konflikt ruhet si kopje (Cilësimet → Të dhënat dhe kopja).', 'Madhësia e tekstit (A− / A+), shkronja arabe, udhëzues i nisjes së parë, raporte automatike gabimesh (mund të fiken); Kontakti me administratorin është i fundit te Cilësimet.', 'Numri i versionit tani shkruhet i plotë: v1.12.0.'] },
   { v: '1.11', tr: ["Telefon uygulaması yenilendi (yeni imza): bilgisayarla Wi‑Fi üzerinden internetsiz eşitleme, sağ üstte Küçült ve Kapat. Eski telefon uygulamasının yanına kurulur; projeleri Wi‑Fi eşitlemeyle ya da Yedekle/Geri yükle ile aktarıp eskisini kaldırabilirsiniz.", "Eski sürümden (v1.8 ve öncesi) gelen bilgisayarlar için bir kerelik yeni program dosyası yayında."],
     en: ["Phone app renewed (new signature): Wi‑Fi sync with the computer without internet, Minimize and Close at the top right. It installs next to the old phone app; move your projects with Wi‑Fi sync or Backup/Restore, then remove the old one.", "A one‑time new program file is available for computers coming from v1.8 or earlier."],
     ar: ["تم تجديد تطبيق الهاتف (توقيع جديد): مزامنة مع الحاسوب عبر Wi‑Fi دون إنترنت، وزرّا التصغير والإغلاق في أعلى اليمين. يُثبَّت بجانب التطبيق القديم؛ انقل مشاريعك بمزامنة Wi‑Fi أو النسخ الاحتياطي/الاستعادة ثم أزل القديم.", "ملف برنامج جديد لمرة واحدة متاح للحواسيب القادمة من الإصدار 1.8 أو أقدم."],
@@ -29,64 +35,16 @@ const NEWS = [
   { v: '1.4', tr: ['Android uygulaması (APK).', 'Ayarlar → Yöneticiye mesaj gönder.'], en: ['Android app (APK).', 'Settings → Send a message to the admin.'], ar: ['تطبيق أندرويد (APK).', 'الإعدادات ← إرسال رسالة إلى المسؤول.'], sq: ['Aplikacioni Android (APK).', 'Cilësimet → Dërgo mesazh administratorit.'] },
   { v: '1.3', tr: ['Türkçe, English ve العربية dil seçenekleri.'], en: ['Turkish, English and Arabic language options.'], ar: ['خيارات اللغة التركية والإنجليزية والعربية.'], sq: ['Gjuhët turqisht, anglisht dhe arabisht.'] }
 ];
+// NEWS yardımcıları: sürüm → not metni (ortak çekirdeğin whatsnew penceresi ve sürüm notları için)
 const News = (() => {
-  const num = v => { const p = String(v).split('.'); return (+p[0] || 0) * 1000 + (+p[1] || 0); };
-  const items = n => n[I18N.lang] || n.en || n.tr;
-  // Güncellemeden sonraki ilk açılışta yenilikleri göster
-  function afterUpdate() {
-    const s = Store.data.settings, seen = s.seenVersion;
-    if (seen === App.short) return;
-    s.seenVersion = App.short; Store.save();
-    // seen yoksa (v1.5 ve öncesinden gelen ya da ilk kurulum) yalnızca bu sürümün yenilikleri gösterilir
-    const from = seen ? num(seen) : num(App.short) - 1;
-    const list = NEWS.filter(n => num(n.v) > from && num(n.v) <= num(App.short));
-    if (!list.length) return;
-    const body = list.map(n => `<h4>v${n.v}</h4><ul>${items(n).map(x => `<li>${esc(x)}</li>`).join('')}</ul>`).join('');
-    modal(t('Program güncellendi: v{v}', { v: App.short }), `<p class="muted">${t('Yenilikler')}</p><div class="news" data-notr>${body}</div>`, [{ label: t('Tamam'), cls: 'primary' }]);
+  const norm = v => { const p = String(v || '').replace(/^v/, '').split('.'); return (+p[0] || 0) + '.' + (+p[1] || 0) + '.' + (+p[2] || 0); };
+  const entry = v => NEWS.find(n => norm(n.v) === norm(v)) || null;
+  // {tr, en, ar, sq}: her dil madde başına bir satır ("- …")
+  function notes(v) {
+    const n = entry(v); if (!n) return null;
+    const o = {}; for (const l of ['tr', 'en', 'ar', 'sq']) if (n[l]) o[l] = n[l].map(x => '- ' + x).join('\n');
+    return o;
   }
-  // Yeni sürüm çıkınca ekranda bildirim
-  function clean(notes) {
-    return String(notes || '').split('\n').filter(l => !/^\s*##|^\s*\*\*(Güncelleme|Android)/.test(l)).join('\n').replace(/\*\*/g, '').trim();
-  }
-  function available(r) {
-    if (document.querySelector('.modal-wrap[data-upd]')) return;
-    // Başka bir pencere (ör. yenilikler) açıksa kapanınca göster
-    if (document.querySelector('.modal-wrap')) return setTimeout(() => available(r), 600);
-    const v = Updater.short(r.version), notes = clean(r.notes);
-    const btns = [{ label: t('Sonra') }];
-    if (r.web) btns.push({ label: t('Sürüm sayfasını aç'), cls: 'primary', onClick: () => openUrl(r.pageUrl) });
-    else if (r.needsFull) btns.push({ label: t('Yeni programı indir'), cls: 'primary', onClick: () => openUrl(r.exeUrl || r.pageUrl) });
-    else btns.push({ label: t('Şimdi güncelle'), cls: 'primary', onClick: async (close, w) => {
-      $$('.modal-f .btn', w).forEach(b => b.disabled = true);
-      $('.upd-st', w).textContent = t('İndiriliyor ve doğrulanıyor…');
-      const x = await Updater.install();
-      if (!x.ok) { $$('.modal-f .btn', w).forEach(b => b.disabled = false); $('.upd-st', w).textContent = t('Hata:') + ' ' + (x.error || ''); }
-      return false;
-    } });
-    const m = modal(t('Yeni sürüm hazır: v{v}', { v }), `<p>${t('Kullandığınız sürüm: v{c}', { c: App.short })}</p>${notes ? `<pre class="notes">${esc(notes)}</pre>` : ''}<p class="muted small upd-st"></p>`, btns);
-    m.el.setAttribute('data-upd', '');
-  }
-  // Açılışta otomatik denetim (Ayarlar'da kapatılabilir)
-  let notified = null;
-  async function full() {
-    const r = await Updater.check();
-    if (r && r.ok && r.available) {
-      $('#upd-banner-v').textContent = 'v' + Updater.short(r.version); $('#upd-banner').hidden = false;
-      if (r.version !== notified) { notified = r.version; available(r); osNotify(r); }
-    }
-    return r;
-  }
-  function osNotify(r) {
-    // Program arka plandaysa işletim sistemi bildirimi de gönder (destekleniyorsa)
-    try {
-      if (!document.hidden || !('Notification' in window)) return;
-      const show = () => new Notification('Comm Calc', { body: t('Yeni sürüm hazır: v{v}', { v: Updater.short(r.version) }) }).onclick = () => window.focus();
-      if (Notification.permission === 'granted') show();
-      else if (Notification.permission !== 'denied') Notification.requestPermission().then(p => p === 'granted' && show());
-    } catch {}
-  }
-  function startWatch() {
-    if (Store.data.settings.autoUpdate) setTimeout(full, 1500);
-  }
-  return { afterUpdate, available, startWatch, clean };
+  return { norm, entry, notes };
 })();
+if (typeof module === 'object' && module.exports) module.exports = { NEWS, News };

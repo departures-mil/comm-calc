@@ -7,6 +7,8 @@
 - Tablolar: VSWR, güç, FSPL, kablo, bantlar, 5,8 GHz FPV kanalları, engel kayıpları
 - Anten ansiklopedisi ve ışıma diyagramları, eğitim bölümü
 - Cihaz/anten kütüphanesi; görsel veya teknik metinden tanıma (çevrimdışı ayrıştırıcı + Gemini)
-- Uygulama içinden tek tıkla güncelleme
+- Uygulama içinden tek tıkla güncelleme (yalnızca değişen kısımlar indirilir, SHA-256 ile doğrulanır)
+- Aynı Wi‑Fi'deki bilgisayar/telefonla internetsiz eşitleme (hiçbir kayıt silinmez)
+- Türkçe, English, العربية, Shqip
 
-**İndir:** [Sürümler](https://github.com/departures-mil/comm-calc/releases/latest) → `Comm-Calc-vX.Y-Tasinabilir.exe` (kurulumsuz) veya `.rar`.
+**İndir:** [Sürümler](https://github.com/departures-mil/comm-calc/releases/latest) → `CommCalc-X.Y.Z-win-setup.exe` (kurulum; kullanıcı klasörüne kurulur, yönetici izni istemez).

@@ -4,6 +4,11 @@ package com.commcalc.app;
 // Masaüstü sürümüyle aynı arayüz (assets/www/src) tam ekran bir WebView içinde çalışır ve
 // https://commcalc.local adresinden uygulamanın kendi dosyalarından sunulur.
 // Veriler files/veri.json dosyasında tutulur; uygulama içinden kurulan güncellemeler bu dosyaya dokunmaz.
+// Kabuk 3 (v1.12.0+, ortak çekirdek): güncelleme GitHub Releases latest.json 'android' kanalından gelir. Arayüz (FC.updater)
+// APK'yı ya da FCD1 yamasını indirip SHA-256 ile doğrular, AndroidBridge.updateBegin/updateChunk/updateFinish ile buraya verir;
+// yama kurulu APK'ya (applicationInfo.sourceDir) uygulanır (com.departuresmil.ortak.FcDelta), sonuç targetSha256 ile
+// doğrulanır ve paket yükleyici açılır. Tüm APK'lar AYNI anahtarla imzalanmalı. Eski imzalı guncelleme.zip yolu (SHELL ≤ 2)
+// eski APK'lar için Java tarafında korunur ama bu kabukta kullanılmaz.
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -36,6 +41,8 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.departuresmil.ortak.FcDelta;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -66,13 +73,15 @@ public class MainActivity extends Activity {
     // Bu APK'nın içindeki arayüz sürümü; uygulama içinden kurulan güncelleme daha yeniyse o kullanılır
     static final String BUILTIN = "1.4.0";
     // Kabuk sürümü: güncelleme paketindeki minShell bundan büyükse yeni APK gerekir
-    static final int SHELL = 2;
+    static final int SHELL = 3;
     // Güncelleme paketlerini doğrulayan açık anahtar (lib/update-key.js ile aynı, ECDSA P-256)
     static final String UPD_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/cyAZQDotqgBl7hIh+GeI+eKp2n1RB7yEziwbbdqXZyWJZ+vlvvfnBMaZIzhIoIQTsV8hk4eGd7WpUVqyhIjcw==";
     static File ota;
     static String otaVer;
     static boolean otaPicked;
     SharedPreferences upd;
+    // ortak çekirdek güncellemesi (updateBegin/Chunk/Finish)
+    String updKind; JSONObject updMeta; File updFile; FileOutputStream updOut; File pendingApk;
 
     WebView web;
     ValueCallback<Uri[]> fileCb;
@@ -150,6 +159,7 @@ public class MainActivity extends Activity {
     // Kurulan paket files/guncelleme/v<sürüm> altına açılır; sayfa dosyaları önce oradan, yoksa APK içinden sunulur.
     void pickUpdate() {
         ota = null; otaVer = null;
+        if (SHELL >= 3) return;   // kabuk 3: arayüz APK'nın içindedir, güncelleme tam APK / yama ile gelir
         String v = upd.getString("version", null), dir = upd.getString("dir", null);
         if (v == null || dir == null || verCode(v) <= verCode(BUILTIN)) return;
         File d = new File(getFilesDir(), "guncelleme/" + dir);
@@ -268,6 +278,50 @@ public class MainActivity extends Activity {
             if (old != null) for (File f : old) if (!f.getName().equals(name)) deleteTree(f);
             return new JSONObject().put("ok", true).put("version", version).toString();
         } catch (Exception e) { return err(e); }
+    }
+
+    // ---------------- Ortak çekirdek: APK kurulumu (Files sağlayıcısı, cache/updates) ve Wi-Fi eşitleme isteği
+    void installApk(final File apk) {
+        ui.post(new Runnable() { public void run() {
+            try {
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setDataAndType(Files.uriFor(MainActivity.this, apk), "application/vnd.android.package-archive");
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+            } catch (Exception e) { toast("Kurulum açılamadı"); }
+        } });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // "Bilinmeyen kaynaklar" izni verilip dönülünce bekleyen APK kurulur
+        if (pendingApk != null && (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls())) { File a = pendingApk; pendingApk = null; if (a.isFile()) installApk(a); }
+    }
+
+    String lanPost(String host, String pin, String json) {
+        HttpURLConnection c = null;
+        try {
+            String h = host == null ? "" : host.trim();
+            if (!h.matches("^[0-9.]{7,15}$|^[A-Za-z0-9.-]{1,253}$")) return new JSONObject().put("ok", false).put("error", "unreachable").toString();
+            c = (HttpURLConnection) new URL("http://" + h + ":47821/cc-esitle").openConnection();
+            c.setConnectTimeout(8000); c.setReadTimeout(60000);
+            c.setRequestMethod("POST"); c.setDoOutput(true);
+            c.setRequestProperty("content-type", "application/json");
+            c.setRequestProperty("x-pin", pin == null ? "" : pin.trim());
+            OutputStream o = c.getOutputStream(); o.write(json.getBytes("UTF-8")); o.close();
+            int st = c.getResponseCode();
+            if (st == 403) return new JSONObject().put("ok", false).put("error", "pin").toString();
+            if (st != 200) return new JSONObject().put("ok", false).put("error", "http " + st).toString();
+            InputStream in = c.getInputStream();
+            ByteArrayOutputStream b = new ByteArrayOutputStream();
+            byte[] buf = new byte[65536]; int r;
+            while ((r = in.read(buf)) > 0) b.write(buf, 0, r);
+            in.close();
+            return new JSONObject().put("ok", true).put("data", new String(b.toByteArray(), "UTF-8")).toString();
+        } catch (Exception e) {
+            try { return new JSONObject().put("ok", false).put("error", "unreachable").toString(); } catch (Exception x) { return "{\"ok\":false}"; }
+        } finally { if (c != null) c.disconnect(); }
     }
 
     static String err(Exception e) {
@@ -468,8 +522,71 @@ public class MainActivity extends Activity {
             ui.post(new Runnable() { public void run() { web.clearCache(true); web.loadUrl(START); } });
         }
 
+
+        // ---- ortak çekirdek (src/cekirdek/fc-core.js → FC.host android) ----
         @JavascriptInterface
-        public void exit() { ui.post(new Runnable() { public void run() { moveTaskToBack(true); } }); }
+        public String appVersion() { return BUILTIN; }
+
+        @JavascriptInterface
+        public void moveTaskToBack() { ui.post(new Runnable() { public void run() { MainActivity.this.moveTaskToBack(true); } }); }
+
+        @JavascriptInterface
+        public void openExternal(final String url) { if (url != null && url.startsWith("https://")) ui.post(new Runnable() { public void run() { MainActivity.this.openExternal(url); } }); }
+
+        @JavascriptInterface
+        public boolean updateBegin(String kind, String metaJson) {
+            try {
+                File dir = new File(getCacheDir(), "updates");
+                dir.mkdirs();
+                File[] old = dir.listFiles();
+                if (old != null) for (File f : old) f.delete();
+                updKind = kind;
+                updMeta = new JSONObject(metaJson == null ? "{}" : metaJson);
+                updFile = new File(dir, "patch".equals(kind) ? "update.patch" : "update-full.apk");
+                if (updOut != null) try { updOut.close(); } catch (Exception e) { }
+                updOut = new FileOutputStream(updFile);
+                return true;
+            } catch (Exception e) { return false; }
+        }
+
+        @JavascriptInterface
+        public boolean updateChunk(String b64) {
+            try { updOut.write(Base64.decode(b64, Base64.DEFAULT)); return true; } catch (Exception e) { return false; }
+        }
+
+        @JavascriptInterface
+        public String updateFinish() {
+            try {
+                updOut.close(); updOut = null;
+                File apk = updFile;
+                String want = updMeta.optString("targetSha256", "").toLowerCase();
+                if ("patch".equals(updKind)) {
+                    if (getApplicationInfo().splitSourceDirs != null && getApplicationInfo().splitSourceDirs.length > 0) return new JSONObject().put("ok", false).put("error", "SPLIT_APK").toString();
+                    apk = new File(updFile.getParentFile(), "update.apk");
+                    FcDelta.apply(new File(getApplicationInfo().sourceDir), updFile, apk, null);
+                    updFile.delete();
+                }
+                if (want.length() != 64 || !want.equals(FcDelta.hex(FcDelta.sha256(apk)))) { apk.delete(); return new JSONObject().put("ok", false).put("error", "BAD_HASH").toString(); }
+                if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+                    pendingApk = apk;
+                    ui.post(new Runnable() { public void run() {
+                        try { startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()))); } catch (Exception e) { }
+                    } });
+                    return new JSONObject().put("ok", true).put("pending", "permission").toString();
+                }
+                installApk(apk);
+                return new JSONObject().put("ok", true).toString();
+            } catch (Exception e) { return err(e); }
+        }
+
+        // Wi-Fi eşitleme: https sayfasından http://<ip> isteği karışık içerik sayılıp engellendiği için istek buradan gider
+        @JavascriptInterface
+        public void lanSync(final String id, final String host, final String pin, final String json) {
+            new Thread(new Runnable() { public void run() { callback(id, MainActivity.this.lanPost(host, pin, json)); } }).start();
+        }
+
+        @JavascriptInterface
+        public void exit() { ui.post(new Runnable() { public void run() { MainActivity.this.moveTaskToBack(true); } }); }
         @JavascriptInterface
         public void quit() { ui.post(new Runnable() { public void run() { if (Build.VERSION.SDK_INT >= 21) finishAndRemoveTask(); else finish(); } }); }
     }

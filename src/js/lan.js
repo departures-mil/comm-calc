@@ -1,10 +1,10 @@
-// İnternetsiz eşitleme (aynı Wi-Fi modemi) + sağ üst Güncelle / Eşitle düğmeleri + indirme ilerlemesi.
-// Birleştirme kuralı: projeler ve kütüphane kimliğe göre birleşir; aynı kayıtta en son
-// değiştirilen kazanır; zamanı bilinmeyen çakışmada karşıdaki kopya ayrı kayıt olarak eklenir
-// (hiçbir şey üzerine yazılıp kaybolmaz). Silinen kayıt "silindi" işaretiyle öbür cihaza da gider.
+// İnternetsiz eşitleme (aynı Wi-Fi modemi). Üst çubuktaki Wi‑Fi / Eşitle düğmeleri (ortak çekirdek) bu pencereyi açar.
+// Birleştirme kuralı ortak çekirdekten (FC.lanMerge): projeler ve kütüphane kimliğe göre birleşir; aynı kayıtta en son
+// değiştirilen kalır, eskisi çakışma yedeğine; öbür cihazda silinen kayıt burada ARŞİVE taşınır (kalıcı silme yok).
 const LanSync = (() => {
   const LISTS = ['projects', 'library'];
   let snap = null;                                    // oturum başındaki kayıt izleri
+  let hostingNow = false;                             // bu bilgisayar eşitlemeye açık mı (üst çubuktaki Wi‑Fi düğmesi)
   const sig = o => { const c = Object.assign({}, o); delete c.updatedAt; return JSON.stringify(c); };
 
   // Her kaydetmede değişen kayda zaman damgası, silinene "silindi" işareti koyar.
@@ -21,49 +21,59 @@ const LanSync = (() => {
     snap = cur;
   }
 
+  // Gönderilen paket. v2: silme izleri "silinen" alanında; "tomb" eski (≤1.11) cihazlar için BOŞ gönderilir, çünkü onların
+  // eski birleştirmesi tomb'daki kayıtları kalıcı olarak silerdi. Eski cihazdan gelen tomb burada yalnızca arşivlemeye yol açar.
   function payload() {
     stamp(Store.data);
     const d = Store.data;
-    return { app: 'commcalc', v: 1, projects: d.projects, library: d.library, tomb: d.tomb || {} };
+    return { app: 'commcalc', v: 2, projects: d.projects, library: d.library, tomb: {}, silinen: d.tomb || {} };
   }
 
+  // Ortak çekirdek kuralı (FC.lanMerge, SPEC "Eşitleme kuralı"): hiçbir kayıt silinmez ya da sessizce ezilmez.
+  //  - yalnız bir tarafta olan kayıt eklenir; iki tarafta farklıysa yeni olan kalır, öbürü d.cakisma'ya (çakışma yedeği) yazılır;
+  //  - öbür cihazda silinen kayıt burada silinmez: d.arsiv'e (arşiv) taşınır, Ayarlar → Veri ve yedek'ten geri alınabilir.
   function merge(r) {
     if (!r || r.app !== 'commcalc') throw new Error(t('Bu veri Comm Calc verisi değil'));
-    const d = Store.data; d.tomb = d.tomb || {};
-    let added = 0, updated = 0, removed = 0;
-    for (const [id, tm] of Object.entries(r.tomb || {})) if (!d.tomb[id] || d.tomb[id] < tm) d.tomb[id] = tm;
+    const d = Store.data; d.tomb = d.tomb || {}; d.arsiv = d.arsiv || []; d.cakisma = d.cakisma || [];
+    const theirTomb = Object.assign({}, r.tomb || {}, r.silinen || {});
+    const now = Date.now();
+    let added = 0, updated = 0, archived = 0, conflicts = 0;
+    const withTombs = (list, tomb) => {
+      const out = (list || []).filter(x => x && x.id);
+      const ids = new Set(out.map(x => x.id));
+      for (const [id, tm] of Object.entries(tomb || {})) if (!ids.has(id)) out.push({ id, deleted: true, deletedAt: tm });
+      return out;
+    };
     for (const k of LISTS) {
       const mine = d[k] = d[k] || [];
-      const sigs = new Set(mine.map(sig));
-      for (const it of r[k] || []) {
-        if (!it || !it.id) continue;
-        const tomb = d.tomb[it.id];
-        if (tomb && tomb >= (it.updatedAt || 0)) continue;           // burada daha sonra silinmiş
-        const i = mine.findIndex(x => x.id === it.id);
-        if (i < 0) { if (!sigs.has(sig(it))) { mine.push(it); added++; } continue; }
-        const a = mine[i];
-        if (sig(a) === sig(it)) continue;
-        if ((it.updatedAt || 0) > (a.updatedAt || 0)) { mine[i] = it; updated++; }
-        else if (!a.updatedAt && !it.updatedAt && !sigs.has(sig(it))) {
-          // iki tarafta da zamanı bilinmeyen farklı sürüm: karşıdakini kopya olarak koru
-          const copy = Object.assign({}, it, { id: it.id + '-' + Math.random().toString(36).slice(2, 7) });
-          if (copy.name) copy.name += ' ' + t('(diğer cihaz)');
-          mine.push(copy); sigs.add(sig(it)); added++;
-        }
+      const before = new Map(mine.map(x => [x.id, sig(x)]));
+      const res = FC.lanMerge.merge(withTombs(mine, d.tomb), withTombs(r[k], theirTomb), { idKey: 'id', updatedKey: 'updatedAt' });
+      const live = [];
+      for (const rec of res.records) {
+        if (rec.archived) continue;                      // arşivlenenler listeden çıkar, d.arsiv'de korunur
+        live.push(rec);
+        if (!before.has(rec.id)) added++; else if (before.get(rec.id) !== sig(rec)) updated++;
       }
-      // karşıda daha sonra silinenler
-      for (let i = mine.length - 1; i >= 0; i--) {
-        const tm = d.tomb[mine[i].id];
-        if (tm && tm > (mine[i].updatedAt || 0)) { mine.splice(i, 1); removed++; }
+      // aynı kaydın aynı hâli ikinci kez arşive / yedeğe yazılmaz (eski cihazla her eşitlemede tekrar gelebilir)
+      const has = (list, rec) => list.some(x => x.tur === k && x.kayit && x.kayit.id === rec.id && sig(x.kayit) === sig(rec));
+      for (const a of res.archived) {
+        const rec = Object.assign({}, a.record); delete rec.archived; delete rec.archivedAt;
+        if (has(d.arsiv, rec)) continue;
+        d.arsiv.push({ tur: k, zaman: now, silinme: a.deletedAt, kaynak: a.from === 'remote' ? 'diger-cihaz' : 'bu-cihaz', kayit: rec });
+        if (a.from === 'remote') archived++;
       }
+      for (const c of res.conflicts) { if (has(d.cakisma, c.lost)) continue; d.cakisma.push({ tur: k, zaman: now, kalan: c.keptFrom === 'local' ? 'bu-cihaz' : 'diger-cihaz', kayit: c.lost }); conflicts++; }
+      d[k] = live;
     }
+    for (const [id, tm] of Object.entries(theirTomb)) if (!d.tomb[id] || d.tomb[id] < tm) d.tomb[id] = tm;
     if (!d.projects.length) { const p = DATA.defaultProject(t('Örnek: 5.8G video linki')); d.projects.push(p); }
     if (!d.projects.find(p => p.id === d.currentId)) d.currentId = d.projects[0].id;
     snap = null; stamp(d);                               // birleşmiş hâl yeni başlangıç
     Store.flush();
     if (App.current) App.go(App.current);
-    return { added, updated, removed };
+    return { added, updated, archived, conflicts };
   }
+  const resultText = res => t('Eşitlendi: {a} yeni, {u} güncellendi, {r} arşive taşındı, {c} çakışma yedeklendi', { a: res.added, u: res.updated, r: res.archived, c: res.conflicts });
 
   // Başka cihaz bize bağlandığında (masaüstü sunucu)
   function init() {
@@ -74,53 +84,34 @@ const LanSync = (() => {
     if (L && L.onIncoming) L.onIncoming(theirs => {
       const mine = payload();                            // önce kendi verimizi ayır
       const res = merge(theirs);
-      toast(t('Eşitlendi: {a} yeni, {u} güncellendi, {r} silindi', { a: res.added, u: res.updated, r: res.removed }));
+      toast(resultText(res));
       return mine;
     });
-    if (window.api && window.api.onUpdateProgress) window.api.onUpdateProgress(p => {
-      const s = IndirmeIlerleme.yazi(p, I18N.lang === 'sq' ? 'en' : I18N.lang);
-      $$('.upd-st, #u-st').forEach(e => e.textContent = s);
-      const pg = $('#top-prog'); if (pg) { pg.hidden = !!p.bitti; pg.textContent = s; }
-    });
-    topButtons();
   }
 
-  // Sağ üst: Güncelle ve Eşitle
-  function topButtons() {
-    const h = $('header.top');
-    if (!h || $('#top-acts')) return;
-    const box = document.createElement('div');
-    box.id = 'top-acts'; box.className = 'top-acts';
-    box.innerHTML = `<span id="top-prog" class="muted small" hidden></span>
-      <button class="icon-btn top-btn" id="top-upd"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><i class="upd-dot" hidden></i></button>
-      <button class="icon-btn top-btn" id="top-sync"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg></button>`;
-    if (window.api && window.api.minimize) {
-      box.insertAdjacentHTML('beforeend', '<button class="icon-btn top-btn" id="top-min">—</button><button class="icon-btn top-btn" id="top-quit">✕</button>');
+  // Arşiv (öbür cihazda silinenler, geri yükleme öncesi hâl) ve çakışma yedekleri: görüntüle, geri al
+  function archiveDialog() {
+    const d = Store.data; d.arsiv = d.arsiv || []; d.cakisma = d.cakisma || [];
+    const body = document.createElement('div');
+    const name = x => (x.kayit && (x.kayit.name || x.kayit.id)) || (x.tur === 'yedek' ? t('Geri yükleme öncesi tüm veriler') : '?');
+    const kind = x => x.tur === 'projects' ? t('Proje') : x.tur === 'library' ? t('Kütüphane') : t('Yedek');
+    function draw() {
+      const rows = [...d.arsiv.map((x, i) => ({ x, i, src: 'arsiv' })), ...d.cakisma.map((x, i) => ({ x, i, src: 'cakisma' }))].sort((a, b) => b.x.zaman - a.x.zaman);
+      body.innerHTML = `<p class="muted small">${esc(t('Wi‑Fi eşitlemesinde öbür cihazda silinen kayıtlar ve çakışmada geride kalan eski sürümler burada saklanır. "Geri al" kaydı kopya olarak listesine ekler.'))}</p>` +
+        (rows.length ? '<div class="cc-list">' + rows.map(r => `<div class="cc-it"><div><b>${esc(name(r.x))}</b><span class="muted small">${esc(kind(r.x))} · ${esc(r.src === 'arsiv' ? t('Arşiv') : t('Çakışma yedeği'))} · ${esc(new Date(r.x.zaman).toLocaleString(I18N.locale))}</span></div>${r.x.tur === 'projects' || r.x.tur === 'library' ? `<button class="btn xs" data-r="${r.src}:${r.i}">${esc(t('Geri al'))}</button>` : ''}</div>`).join('') + '</div>'
+        : `<p>${esc(t('Arşivde kayıt yok.'))}</p>`);
+      $$('[data-r]', body).forEach(b => b.onclick = () => {
+        const [src, i] = b.dataset.r.split(':'); const x = (src === 'arsiv' ? d.arsiv : d.cakisma)[+i];
+        const list = d[x.tur] = d[x.tur] || [];
+        const rec = JSON.parse(JSON.stringify(x.kayit));
+        if (list.some(y => y.id === rec.id)) { rec.id = rec.id + '-' + Math.random().toString(36).slice(2, 7); if (rec.name) rec.name += ' ' + t('(geri alındı)'); }
+        rec.updatedAt = Date.now(); delete d.tomb[rec.id];
+        list.push(rec); Store.save(); toast(t('Geri alındı: {n}', { n: name(x) }));
+        b.disabled = true;
+      });
     }
-    h.appendChild(box);
-    titles();
-    if ($('#top-min')) {
-      $('#top-min').onclick = () => window.api.minimize();
-      $('#top-quit').onclick = async () => { if (await confirmBox(t('Programdan çıkılsın mı?'))) { await Store.flush(); window.api.quit(); } };
-    }
-    $('#top-upd').onclick = async () => {
-      const b = $('#top-upd'); b.classList.add('busy');
-      try {
-        const r = await Updater.check();
-        if (r && r.ok && r.available) News.available ? News.available(r) : App.go('settings');
-        else if (r && r.ok) toast(t('Program güncel'));
-        else toast(t('Hata:') + ' ' + ((r && r.error) || ''), 'err');
-      } finally { b.classList.remove('busy'); }
-    };
-    $('#top-sync').onclick = dialog;
-  }
-  function titles() {
-    const u = $('#top-upd'), s = $('#top-sync');
-    if (u) { u.title = t('Güncelle'); u.setAttribute('aria-label', u.title); }
-    if (s) { s.title = t('Eşitle'); s.setAttribute('aria-label', s.title); }
-    const mi = $('#top-min'), q = $('#top-quit');
-    if (mi) { mi.title = t('Küçült'); mi.setAttribute('aria-label', mi.title); }
-    if (q) { q.title = t('Kapat'); q.setAttribute('aria-label', q.title); }
+    draw();
+    return modal(t('Arşiv ve çakışma yedekleri'), body, [{ label: t('Kapat') }]);
   }
 
   function dialog() {
@@ -153,7 +144,7 @@ const LanSync = (() => {
     if (desk) {
       paintHost();
       $('#lan-start', body).onclick = async () => {
-        try { const st = await L.state(); if (st.hosting) await L.stop(); else await L.start(); }
+        try { const st = await L.state(); if (st.hosting) await L.stop(); else await L.start(); hostingNow = !st.hosting; if (window.Kabuk) Kabuk.setLan(hostingNow ? 'on' : 'off'); }
         catch (e) { toast(t('Hata:') + ' ' + e.message, 'err'); }
         paintHost();
       };
@@ -175,7 +166,7 @@ const LanSync = (() => {
         const r = desk ? await L.sync(host, pin, payload()) : await webSync(host, pin);
         if (!r.ok) throw new Error(r.error);
         const res = merge(r.data);
-        out.textContent = t('Eşitlendi: {a} yeni, {u} güncellendi, {r} silindi', { a: res.added, u: res.updated, r: res.removed });
+        out.textContent = resultText(res);
       } catch (e) {
         const c = String(e.message || e);
         out.textContent = c === 'pin' ? t('Kod yanlış.') : c === 'unreachable' || /fetch|network|timeout/i.test(c)
@@ -185,8 +176,14 @@ const LanSync = (() => {
     return m;
   }
 
-  // Telefon (APK) istemcisi: bilgisayardaki sunucuya doğrudan bağlanır
+  // Telefon (APK) istemcisi: bilgisayardaki sunucuya bağlanır. Yeni APK'da istek yerel taraftan (Java) gider; https sayfasından
+  // http://<ip> isteği karışık içerik olarak engellendiği için eski APK'da yalnızca fetch denenir.
   async function webSync(host, pin) {
+    if (window.api && window.api.lanSync) {
+      const r = await window.api.lanSync(host, pin, JSON.stringify(payload()));
+      if (r && r.ok && typeof r.data === 'string') { try { r.data = JSON.parse(r.data); } catch { return { ok: false, error: 'json' }; } }
+      return r;
+    }
     const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 60000);
     try {
       const r = await fetch(`http://${host}:47821/cc-esitle`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-pin': pin }, body: JSON.stringify(payload()), signal: ctl.signal });
@@ -196,5 +193,5 @@ const LanSync = (() => {
     } catch { return { ok: false, error: 'unreachable' }; } finally { clearTimeout(tm); }
   }
 
-  return { init, merge, payload, stamp, dialog, titles };
+  return { init, merge, payload, stamp, dialog, archiveDialog, hosting: () => hostingNow };
 })();
