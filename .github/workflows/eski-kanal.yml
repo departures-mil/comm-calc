@@ -1,7 +1,7 @@
 # Eski kanal köprüsü: Milen'in bilgisayarında `node tools/eski-kanal.mjs` imzalı release/guncelleme.zip + guncelleme.json'u
 # main'e gönderince ikisini v<sürüm> release'ine ekler. ccShell 1–2 taşınabilir exe'ler ve SHELL 2 Android APK'ları
 # releases/latest'te bu iki dosyayı arar (ECDSA imzası programda doğrulanır; özel anahtar CI'da YOKTUR).
-# Bu dosya yalnızca GitHub MCP create_or_update_file ile değiştirilebilir.
+# İş akışı dosyalarını değiştirmek Milen'in açık onayını ister.
 name: eski-kanal
 on:
   push:

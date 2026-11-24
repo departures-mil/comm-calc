@@ -1,0 +1,7 @@
+# Her işletim sisteminde aynı (LF) dosyalar: Windows derlemesi bayt bayt aynı app.asar üretir, sürüm denetimleri tutar.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.pkg binary
+*.woff2 binary
+*.jar binary
