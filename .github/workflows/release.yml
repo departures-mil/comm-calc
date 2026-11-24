@@ -75,6 +75,7 @@ jobs:
       version: ${{ needs.build.outputs.version }}
       file_prefix: CommCalc
       release_title: Comm Calc v${{ needs.build.outputs.version }}
+      min_version: 1.13.1
       files: |
         win-app=app.asar
         win-setup=*Setup*.exe
