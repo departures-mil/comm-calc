@@ -1,12 +1,12 @@
 // ESKİ GÜNCELLEME KANALI KÖPRÜSÜ (ccShell 1–2 taşınabilir exe'ler ve SHELL 2 Android APK'ları için).
 //
 // Eski kurulumlar api.github.com/repos/departures-mil/comm-calc/releases/latest'teki guncelleme.json + guncelleme.zip'i okur,
-// ECDSA P-256 imzasını (lib/update-key.js'deki açık anahtar; özel anahtar YALNIZCA geliştiricinin bilgisayarında) doğrular ve
+// ECDSA P-256 imzasını (lib/update-key.js'deki açık anahtar; özel anahtar YALNIZCA kullanıcının bilgisayarında) doğrular ve
 // zip'i %APPDATA%\Comm Calc\guncelleme\v<sürüm>\ (Android: files/guncelleme) altına açar. Eski main.js oradaki app-main.js'i
 // yükler; yeni app-main.js eski kabukta olduğunu anlar ve kullanıcıyı tek tıkla yeni NSIS kurulumuna geçirir (src/js/kabuk.js → bridge).
 // Android'de yeni arayüz eski APK'da çalışır ve sonraki imzalı paketleri aynı yoldan almaya devam eder.
 //
-// Akış (yeni sürüm GitHub Release olarak CI'da YAYINLANDIKTAN SONRA, geliştiricinin bilgisayarında, depo kökünde):
+// Akış (yeni sürüm GitHub Release olarak CI'da YAYINLANDIKTAN SONRA, kullanıcının bilgisayarında, depo kökünde):
 //     git pull && npm ci && node tools/eski-kanal.mjs
 //   → release/guncelleme.zip + guncelleme.json (imzalı) üretilir, main'e gönderilir; .github/workflows/eski-kanal.yml
 //     ikisini v<sürüm> release'ine ekler. Anahtar yolu: OZEL_ANAHTAR ortam değişkeni ya da aşağıdaki varsayılan.

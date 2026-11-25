@@ -1,7 +1,7 @@
 #!/bin/bash
 # Comm Calc APK (2026-11-22'den itibaren): aapt2 + d8 (Gradle'sız). Paket: com.departures.commcalc (yeni anahtar).
 # Araçlar: ANDROID_TOOLS (bt/<build-tools 35>, pf/android-35) — dl.google.com/android/repository/build-tools_r35_linux.zip, platform-35_r02.zip
-# Anahtar depoda DEĞİL: C:\Claude Programlarım\_Anahtarlar\CommCalc\android (comm-calc.keystore + sifre.txt, alias commcalc) → KEYDIR
+# Anahtar depoda DEĞİL: geliştiricinin bilgisayarındaki anahtar klasörü (comm-calc.keystore + sifre.txt, alias commcalc) → KEYDIR
 # Kullanım: KEYDIR=... android/build2.sh   → android/out/Comm-Calc-v<sürüm>.apk
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(cd "$HERE/.." && pwd)
